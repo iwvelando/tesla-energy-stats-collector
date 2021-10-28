@@ -1,0 +1,15 @@
+# Tesla Gateway Configuration
+teslaGateway:
+  email: myemail # email for the Tesla Gateway installed on your local network
+  password: mypassword # password for the Tesla Gateway installed on your local network
+  address: https://teg.mydomain:443 # HTTP address for the Tesla Gateway
+  skipVerifySsl: false
+
+# InfluxDB Configuration
+influxDB:
+  address: https://127.0.0.1:8086 # HTTP address for InfluxDB
+  skipVerifySsl: false # toggle skipping SSL verification
+
+# Polling Configuration
+polling:
+  interval: 5 # time in seconds to wait in between Tesla Gateway polling attempts
