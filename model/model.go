@@ -61,3 +61,37 @@ type TegMetersAggregate struct {
 	NumMetersAggregated               int     `json:"num_meters_aggregated"`
 	InstantTotalCurrent               float64 `json:"instant_total_current"`
 }
+
+// Response for /api/operation
+type TegOperation struct {
+	RealMode             string  `json:"real_mode"`
+	BackupReservePercent float64 `json:"backup_reserve_percent"`
+}
+
+// Response for /api/powerwalls
+type TegPowerwalls struct {
+	Enumerating	bool	`json:"enumerating"`
+	Updating	bool	`json:"updating"`
+	CheckingIfOffgrid	bool	`json:"checking_if_offgrid"`
+	RunningPhaseDetection	bool	`json:"running_phase_detection"`
+	PhaseDetectionLastError	string	`json:"phase_detection_last_error"`
+	BubbleShedding	bool	`json:"bubble_shedding"`
+	OnGridCheckError	string	`json:"on_grid_check_error"`
+	GridQualifying	bool	`json:"grid_qualifying"`
+	GridCodeValidating	bool	`json:"grid_code_validating"`
+	PhaseDetectionNotAvailable	bool	`json:"phase_detection_not_available"`
+	Powerwalls	[]TegPowerwall	`json:"powerwalls"`
+	Msa	string	`json:"msa"`
+	States	[]string	`json:"states"`
+	}
+
+type TegPowerwall struct {
+	Type	string	`json:"Type"`
+	PackagePartNumber	string	`json:"PackagePartNumber"`
+	PackageSerialNumber	string	`json:"PackageSerialNumber"`
+	Subtype	string	`json:"type"`
+	GridState:	string	`json:"grid_state"`
+	GridReconnectionTimeSeconds	int	`json:"grid_reconnection_time_seconds"`
+	UnderPhaseDetection	bool	`json:"under_phase_detection"`
+	Updating	bool	`json:"updating"`
+}

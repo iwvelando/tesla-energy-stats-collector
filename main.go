@@ -70,4 +70,11 @@ func main() {
 	}
 	fmt.Println(result.(*model.TegMeters))
 
+	tegOperation := &model.TegOperation{}
+	result, err = connect.GetEndpoint(configuration, client, "/api/operation", tegOperation)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result.(*model.TegOperation))
+
 }
