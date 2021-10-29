@@ -70,6 +70,13 @@ func main() {
 	}
 	fmt.Println(tegMeters)
 
+	tegMetersStatus := model.TegMetersStatus{}
+	err = connect.GetEndpoint(configuration, client, "/api/meters/status", &tegMetersStatus)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tegMetersStatus)
+
 	tegOperation := model.TegOperation{}
 	err = connect.GetEndpoint(configuration, client, "/api/operation", &tegOperation)
 	if err != nil {
@@ -90,6 +97,20 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(tegSiteInfo)
+
+	tegSitemaster := model.TegSitemaster{}
+	err = connect.GetEndpoint(configuration, client, "/api/sitemaster", &tegSitemaster)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tegSitemaster)
+
+	tegSolarPowerwall := model.TegSolarPowerwall{}
+	err = connect.GetEndpoint(configuration, client, "/api/solar_powerwall", &tegSolarPowerwall)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tegSolarPowerwall)
 
 	tegSolars := []model.TegSolars{}
 	err = connect.GetEndpoint(configuration, client, "/api/solars", &tegSolars)
