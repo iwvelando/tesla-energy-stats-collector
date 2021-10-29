@@ -100,4 +100,46 @@ func main() {
 		fmt.Println(i)
 	}
 
+	tegNetworkConnectionTests := model.TegNetworkConnectionTests{}
+	err = connect.GetEndpoint(configuration, client, "/api/system/networks/conn_tests", &tegNetworkConnectionTests)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tegNetworkConnectionTests)
+
+	tegSystemTesting := model.TegSystemTesting{}
+	err = connect.GetEndpoint(configuration, client, "/api/system/testing", &tegSystemTesting)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tegSystemTesting)
+
+	tegUpdateStatus := model.TegUpdateStatus{}
+	err = connect.GetEndpoint(configuration, client, "/api/system/update/status", &tegUpdateStatus)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tegUpdateStatus)
+
+	tegSystemStatus := model.TegSystemStatus{}
+	err = connect.GetEndpoint(configuration, client, "/api/system_status", &tegSystemStatus)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tegSystemStatus)
+
+	tegSystemGridStatus := model.TegSystemGridStatus{}
+	err = connect.GetEndpoint(configuration, client, "/api/system_status/grid_status", &tegSystemGridStatus)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tegSystemGridStatus)
+
+	tegSystemStateOfEnergy := model.TegSystemStateOfEnergy{}
+	err = connect.GetEndpoint(configuration, client, "/api/system_status/soe", &tegSystemStateOfEnergy)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tegSystemStateOfEnergy)
+
 }

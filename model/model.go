@@ -129,6 +129,7 @@ type TegPowerwallsCheck struct {
 	Checks    interface{} `json:"checks"`
 }
 
+// Response for /api/site_info
 type TegSiteInfo struct {
 	MeasuredFrequency      float64             `json:"measured_frequency"`
 	MaxSystemEnergyKwh     float64             `json:"max_system_energy_kWh"`
@@ -154,8 +155,150 @@ type TegSiteInfoGridCode struct {
 	Utility            string `json:"utility"`
 }
 
+// Response for /api/solars
 type TegSolars struct {
 	Brand            string `json:"brand"`
 	Model            string `json:"model"`
 	PowerRatingWatts int    `json:"power_rating_watts"`
+}
+
+// Response for /api/system/networks/conn_tests
+type TegNetworkConnectionTests struct {
+	Name       string                      `json:"name"`
+	Category   string                      `json:"category"`
+	Disruptive bool                        `json:"disruptive"`
+	Inputs     interface{}                 `json:"inputs"`
+	Checks     []TegNetworkConnectionCheck `json:"checks"`
+	Alert      bool                        `json:"alert"`
+}
+
+type TegNetworkConnectionCheck struct {
+	Name      string      `json:"name"`
+	Status    string      `json:"status"`
+	StartTime string      `json:"start_time"`
+	EndTime   string      `json:"end_time"`
+	Results   interface{} `json:"results"`
+	Debug     interface{} `json:"debug"`
+	Checks    interface{} `json:"checks"`
+}
+
+// Response for /api/system/testing
+type TegSystemTesting struct {
+	Running         bool        `json:"running"`
+	Status          string      `json:"status"`
+	ChargeTests     interface{} `json:"charge_tests"`
+	MeterResults    interface{} `json:"meter_results"`
+	InverterResults interface{} `json:"inverter_results"`
+	Hysteresis      int         `json:"hysteresis"`
+	Error           string      `json:"error"`
+	Errors          interface{} `json:"errors"`
+	Tests           interface{} `json:"tests"`
+}
+
+// Response for /api/system/update/status
+type TegUpdateStatus struct {
+	State                   string        `json:"state"`
+	Info                    TegUpdateInfo `json:"info"`
+	CurrentTime             int           `json:"current_time"`
+	LastStatusTime          int           `json:"last_status_time"`
+	FirmwareVersion         string        `json:"version"`
+	OfflineUpdating         bool          `json:"offline_updating"`
+	OfflineUpdateError      string        `json:"offline_update_error"`
+	EstimatedBytesPerSecond interface{}   `json:"estimated_bytes_per_second"`
+}
+
+type TegUpdateInfo struct {
+	Status []string `json:"status"`
+}
+
+// Response for /api/system_status
+type TegSystemStatus struct {
+	CommandSource                   string            `json:"command_source"`
+	BatteryTargetPower              float64           `json:"battery_target_power"`
+	BatteryTargetReactivePower      int               `json:"battery_target_reactive_power"`
+	NominalFullPackEnergyWattHours  int               `json:"nominal_full_pack_energy"`
+	NominalEnergyRemainingWattHours int               `json:"nominal_energy_remaining"`
+	MaxPowerEnergyRemaining         int               `json:"max_power_energy_remaining"`
+	MaxPowerEnergyToBeCharged       int               `json:"max_power_energy_to_be_charged"`
+	MaxChargePowerWatts             int               `json:"max_charge_power"`
+	MaxDischargePowerWatts          int               `json:"max_discharge_power"`
+	MaxApparentPower                int               `json:"max_apparent_power"`
+	InstantaneousMaxDischargePower  int               `json:"instantaneous_max_discharge_power"`
+	InstantaneousMaxChargePower     int               `json:"instantaneous_max_charge_power"`
+	GridServicesPower               int               `json:"grid_services_power"`
+	SystemIslandState               string            `json:"system_island_state"`
+	AvailableBlocks                 int               `json:"available_blocks"`
+	BatteryBlocks                   []TegBatteryBlock `json:"battery_blocks"`
+	FfrPowerAvailabilityHigh        int               `json:"ffr_power_availability_high"`
+	FfrPowerAvailabilityLow         int               `json:"ffr_power_availability_low"`
+	LoadChargeConstraint            int               `json:"load_charge_constraint"`
+	MaxSustainedRampRate            int               `json:"max_sustained_ramp_rate"`
+	GridFaults                      []TegGridFault    `json:"grid_faults"`
+	CanReboot                       string            `json:"can_reboot"`
+	SmartInvDeltaP                  int               `json:"smart_inv_delta_p"`
+	SmartInvDeltaQ                  int               `json:"smart_inv_delta_q"`
+	LastToggleTimestamp             string            `json:"last_toggle_timestamp"`
+	SolarRealPowerLimit             float64           `json:"solar_real_power_limit"`
+	Score                           int               `json:"score"`
+	BlocksControlled                int               `json:"blocks_controlled"`
+	Primary                         bool              `json:"primary"`
+	AuxiliaryLoad                   int               `json:"auxiliary_load"`
+	AllEnableLinesHigh              bool              `json:"all_enable_lines_high"`
+	InverterNominalUsablePowerWatts int               `json:"inverter_nominal_usable_power"`
+	ExpectedEnergyRemaining         int               `json:"expected_energy_remaining"`
+}
+
+type TegBatteryBlock struct {
+	Type                            string      `json:"Type"`
+	PackagePartNumber               string      `json:"PackagePartNumber"`
+	PackageSerialNumber             string      `json:"PackageSerialNumber"`
+	DisabledReasons                 interface{} `json:"disabled_reasons"`
+	PinvState                       string      `json:"pinv_state"`
+	PinvGridState                   string      `json:"pinv_grid_state"`
+	NominalEnergyRemainingWattHours int         `json:"nominal_energy_remaining"`
+	NominalFullPackEnergy           int         `json:"nominal_full_pack_energy"`
+	POut                            int         `json:"p_out"`
+	QOut                            int         `json:"q_out"`
+	VOut                            float64     `json:"v_out"`
+	FOut                            float64     `json:"f_out"`
+	IOut                            float64     `json:"i_out"`
+	EnergyCharged                   int         `json:"energy_charged"`
+	EnergyDischarged                int         `json:"energy_discharged"`
+	OffGrid                         bool        `json:"off_grid"`
+	VfMode                          bool        `json:"vf_mode"`
+	WobbleDetected                  bool        `json:"wobble_detected"`
+	ChargePowerClamped              bool        `json:"charge_power_clamped"`
+	BackupReady                     bool        `json:"backup_ready"`
+	OpSeqState                      string      `json:"OpSeqState"`
+	Version                         string      `json:"version"`
+}
+
+type TegGridFault struct {
+	Timestamp              int        `json:"timestamp"`
+	AlertName              string     `json:"alert_name"`
+	AlertIsFault           bool       `json:"alert_is_fault"`
+	DecodedAlert           []TegAlert `json:"decoded_alert"`
+	AlertRaw               int        `json:"alert_raw"`
+	FirmwareGitHash        string     `json:"git_hash"`
+	SiteUid                string     `json:"site_uid"`
+	EcuType                string     `json:"eco_type"`
+	EcuPackagePartNumber   string     `json:"ecu_package_part_number"`
+	EcuPackageSerialNumber string     `json:"ecu_package_serial_number"`
+}
+
+type TegAlert struct {
+	Name  string      `json:"name"`
+	Value interface{} `json:"value"` // Observed as string or float64
+	Units string      `json:"units"`
+}
+
+// Response for /api/system_status/grid_status
+type TegSystemGridStatus struct {
+	GridStatus         string `json:"grid_status"`
+	GridServicesActive bool   `json:"grid_services_active"`
+}
+
+// Response for /api/system_status/soe
+type TegSystemStateOfEnergy struct {
+	Percentage float64 `json:"percentage"`
 }
