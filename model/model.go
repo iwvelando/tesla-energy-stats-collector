@@ -21,17 +21,17 @@ type AuthResponse struct {
 
 // Response for /api/status
 type TegStatus struct {
-	Id              string   `json:"din"`
-	StartTime       string   `json:"start_time"`
-	Uptime          string   `json:"up_time_seconds"`
-	IsNew           bool     `json:"is_new"`
-	FirmwareVersion string   `json:"version"`
-	FirmwareGitHash string   `json:"git_hash"`
-	CommissionCount int      `json:"commission_count"`
-	DeviceType      string   `json:"device_type"`
-	SyncType        string   `json:"sync_type"`
-	Leader          string   `json:"leader"`
-	Followers       []string `json:"followers"`
+	GatewayId       string      `json:"din"`
+	StartTime       string      `json:"start_time"`
+	Uptime          string      `json:"up_time_seconds"`
+	IsNew           bool        `json:"is_new"`
+	FirmwareVersion string      `json:"version"`
+	FirmwareGitHash string      `json:"git_hash"`
+	CommissionCount int         `json:"commission_count"`
+	DeviceType      string      `json:"device_type"`
+	SyncType        string      `json:"sync_type"`
+	Leader          interface{} `json:"leader"`
+	Followers       interface{} `json:"followers"`
 }
 
 // Response for /api/meters/aggregates
@@ -70,28 +70,92 @@ type TegOperation struct {
 
 // Response for /api/powerwalls
 type TegPowerwalls struct {
-	Enumerating	bool	`json:"enumerating"`
-	Updating	bool	`json:"updating"`
-	CheckingIfOffgrid	bool	`json:"checking_if_offgrid"`
-	RunningPhaseDetection	bool	`json:"running_phase_detection"`
-	PhaseDetectionLastError	string	`json:"phase_detection_last_error"`
-	BubbleShedding	bool	`json:"bubble_shedding"`
-	OnGridCheckError	string	`json:"on_grid_check_error"`
-	GridQualifying	bool	`json:"grid_qualifying"`
-	GridCodeValidating	bool	`json:"grid_code_validating"`
-	PhaseDetectionNotAvailable	bool	`json:"phase_detection_not_available"`
-	Powerwalls	[]TegPowerwall	`json:"powerwalls"`
-	Msa	string	`json:"msa"`
-	States	[]string	`json:"states"`
-	}
+	Enumerating                bool              `json:"enumerating"`
+	Updating                   bool              `json:"updating"`
+	CheckingIfOffgrid          bool              `json:"checking_if_offgrid"`
+	RunningPhaseDetection      bool              `json:"running_phase_detection"`
+	PhaseDetectionLastError    string            `json:"phase_detection_last_error"`
+	BubbleShedding             bool              `json:"bubble_shedding"`
+	OnGridCheckError           string            `json:"on_grid_check_error"`
+	GridQualifying             bool              `json:"grid_qualifying"`
+	GridCodeValidating         bool              `json:"grid_code_validating"`
+	PhaseDetectionNotAvailable bool              `json:"phase_detection_not_available"`
+	Powerwalls                 []TegPowerwall    `json:"powerwalls"`
+	GatewayId                  string            `json:"gateway_din"`
+	Sync                       TegPowerwallsSync `json:"sync"`
+	Msa                        interface{}       `json:"msa"`
+	States                     interface{}       `json:"states"`
+}
 
 type TegPowerwall struct {
-	Type	string	`json:"Type"`
-	PackagePartNumber	string	`json:"PackagePartNumber"`
-	PackageSerialNumber	string	`json:"PackageSerialNumber"`
-	Subtype	string	`json:"type"`
-	GridState:	string	`json:"grid_state"`
-	GridReconnectionTimeSeconds	int	`json:"grid_reconnection_time_seconds"`
-	UnderPhaseDetection	bool	`json:"under_phase_detection"`
-	Updating	bool	`json:"updating"`
+	Type                        string                  `json:"Type"`
+	PackagePartNumber           string                  `json:"PackagePartNumber"`
+	PackageSerialNumber         string                  `json:"PackageSerialNumber"`
+	Subtype                     string                  `json:"type"`
+	GridState                   string                  `json:"grid_state"`
+	GridReconnectionTimeSeconds int                     `json:"grid_reconnection_time_seconds"`
+	UnderPhaseDetection         bool                    `json:"under_phase_detection"`
+	Updating                    bool                    `json:"updating"`
+	CommissioningDiagnostic     TegPowerwallsDiagnostic `json:"commissioning_diagnostic"`
+	UpdateDiagnostic            TegPowerwallsDiagnostic `json:"update_diagnostic"`
+	BcType                      interface{}             `json:"bc_type"`
+	InConfig                    bool                    `json:"in_config"`
+}
+
+type TegPowerwallsSync struct {
+	Updating                bool                    `json:"updating"`
+	CommissioningDiagnostic TegPowerwallsDiagnostic `json:"commissioning_diagnostic"`
+	UpdateDiagnostic        TegPowerwallsDiagnostic `json:"update_diagnostic"`
+}
+
+type TegPowerwallsDiagnostic struct {
+	Name       string               `json:"name"`
+	Category   string               `json:"category"`
+	Disruptive bool                 `json:"disruptive"`
+	Inputs     interface{}          `json:"inputs"`
+	Checks     []TegPowerwallsCheck `json:"checks"`
+	Alert      bool                 `json:"alert"`
+}
+
+type TegPowerwallsCheck struct {
+	Name      string      `json:"name"`
+	Status    string      `json:"status"`
+	StartTime string      `json:"start_time"`
+	EndTime   string      `json:"end_time"`
+	Message   string      `json:"message"`
+	Progress  int         `json:"progress"`
+	Results   interface{} `json:"results"`
+	Debug     interface{} `json:"debug"`
+	Checks    interface{} `json:"checks"`
+}
+
+type TegSiteInfo struct {
+	MeasuredFrequency      float64             `json:"measured_frequency"`
+	MaxSystemEnergyKwh     float64             `json:"max_system_energy_kWh"`
+	MaxSystemPowerKw       float64             `json:"max_system_power_kW"`
+	SiteName               string              `json:"site_name"`
+	Timezone               string              `json:"timezone"`
+	NetMeterMode           string              `json:"net_meter_mode"`
+	MaxSiteMeterPowerKw    int                 `json:"max_site_meter_power_kW"`
+	MinSiteMeterPowerKw    int                 `json:"min_site_meter_power_kW"`
+	NominalSystemEnergyKwh float64             `json:"nominal_system_energy_kWh"`
+	NominalSystemPowerKw   float64             `json:"nominal_system_power_kW"`
+	PanelMaxCurrent        int                 `json:"panel_max_current"`
+	GridCode               TegSiteInfoGridCode `json:"grid_code"`
+}
+
+type TegSiteInfoGridCode struct {
+	GridCode           string `json:"grid_code"`
+	GridVoltageSetting int    `json:"grid_voltage_setting"`
+	GridFreqSetting    int    `json:"grid_freq_setting"`
+	GridPhaseSetting   string `json:"grid_phase_setting"`
+	Country            string `json:"country"`
+	State              string `json:"state"`
+	Utility            string `json:"utility"`
+}
+
+type TegSolars struct {
+	Brand            string `json:"brand"`
+	Model            string `json:"model"`
+	PowerRatingWatts int    `json:"power_rating_watts"`
 }

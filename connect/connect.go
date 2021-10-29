@@ -75,29 +75,29 @@ func Auth(config *config.Configuration) (*http.Client, error) {
 	return client, nil
 }
 
-func GetEndpoint(config *config.Configuration, client *http.Client, endpoint string, data interface{}) (interface{}, error) {
+func GetEndpoint(config *config.Configuration, client *http.Client, endpoint string, data interface{}) error {
 	req, err := http.NewRequest("GET", config.TeslaGateway.Address+endpoint, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	err = json.Unmarshal(body, data)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return data, nil
+	return nil
 }
 
 //func GetAll(config *config.Configuration) (data Metrics, error) {

@@ -56,25 +56,48 @@ func main() {
 		panic(err)
 	}
 
-	tegStatus := &model.TegStatus{}
-	result, err := connect.GetEndpoint(configuration, client, "/api/status", tegStatus)
+	tegStatus := model.TegStatus{}
+	err = connect.GetEndpoint(configuration, client, "/api/status", &tegStatus)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(result.(*model.TegStatus).Id)
+	fmt.Println(tegStatus)
 
-	tegMeters := &model.TegMeters{}
-	result, err = connect.GetEndpoint(configuration, client, "/api/meters/aggregates", tegMeters)
+	tegMeters := model.TegMeters{}
+	err = connect.GetEndpoint(configuration, client, "/api/meters/aggregates", &tegMeters)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(result.(*model.TegMeters))
+	fmt.Println(tegMeters)
 
-	tegOperation := &model.TegOperation{}
-	result, err = connect.GetEndpoint(configuration, client, "/api/operation", tegOperation)
+	tegOperation := model.TegOperation{}
+	err = connect.GetEndpoint(configuration, client, "/api/operation", &tegOperation)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(result.(*model.TegOperation))
+	fmt.Println(tegOperation)
+
+	tegPowerwalls := model.TegPowerwalls{}
+	err = connect.GetEndpoint(configuration, client, "/api/powerwalls", &tegPowerwalls)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tegPowerwalls)
+
+	tegSiteInfo := model.TegSiteInfo{}
+	err = connect.GetEndpoint(configuration, client, "/api/site_info", &tegSiteInfo)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tegSiteInfo)
+
+	tegSolars := []model.TegSolars{}
+	err = connect.GetEndpoint(configuration, client, "/api/solars", &tegSolars)
+	if err != nil {
+		panic(err)
+	}
+	for _, i := range tegSolars {
+		fmt.Println(i)
+	}
 
 }
