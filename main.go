@@ -7,7 +7,6 @@ import (
 	"os"
 	//        "github.com/iwvelando/tesla-energy-stats-collector/influxdb"
 	"github.com/iwvelando/tesla-energy-stats-collector/connect"
-	"github.com/iwvelando/tesla-energy-stats-collector/model"
 	"go.uber.org/zap"
 )
 
@@ -51,116 +50,15 @@ func main() {
 		panic(err)
 	}
 
-	client, err := connect.Auth(configuration)
+	client, refreshTime, err := connect.Auth(configuration)
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println(refreshTime)
 
-	tegStatus := model.TegStatus{}
-	err = connect.GetEndpoint(configuration, client, "/api/status", &tegStatus)
+	err = connect.GetAll(configuration, client)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(tegStatus)
-
-	tegMeters := model.TegMeters{}
-	err = connect.GetEndpoint(configuration, client, "/api/meters/aggregates", &tegMeters)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegMeters)
-
-	tegMetersStatus := model.TegMetersStatus{}
-	err = connect.GetEndpoint(configuration, client, "/api/meters/status", &tegMetersStatus)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegMetersStatus)
-
-	tegOperation := model.TegOperation{}
-	err = connect.GetEndpoint(configuration, client, "/api/operation", &tegOperation)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegOperation)
-
-	tegPowerwalls := model.TegPowerwalls{}
-	err = connect.GetEndpoint(configuration, client, "/api/powerwalls", &tegPowerwalls)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegPowerwalls)
-
-	tegSiteInfo := model.TegSiteInfo{}
-	err = connect.GetEndpoint(configuration, client, "/api/site_info", &tegSiteInfo)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegSiteInfo)
-
-	tegSitemaster := model.TegSitemaster{}
-	err = connect.GetEndpoint(configuration, client, "/api/sitemaster", &tegSitemaster)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegSitemaster)
-
-	tegSolarPowerwall := model.TegSolarPowerwall{}
-	err = connect.GetEndpoint(configuration, client, "/api/solar_powerwall", &tegSolarPowerwall)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegSolarPowerwall)
-
-	tegSolars := []model.TegSolars{}
-	err = connect.GetEndpoint(configuration, client, "/api/solars", &tegSolars)
-	if err != nil {
-		panic(err)
-	}
-	for _, i := range tegSolars {
-		fmt.Println(i)
-	}
-
-	tegNetworkConnectionTests := model.TegNetworkConnectionTests{}
-	err = connect.GetEndpoint(configuration, client, "/api/system/networks/conn_tests", &tegNetworkConnectionTests)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegNetworkConnectionTests)
-
-	tegSystemTesting := model.TegSystemTesting{}
-	err = connect.GetEndpoint(configuration, client, "/api/system/testing", &tegSystemTesting)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegSystemTesting)
-
-	tegUpdateStatus := model.TegUpdateStatus{}
-	err = connect.GetEndpoint(configuration, client, "/api/system/update/status", &tegUpdateStatus)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegUpdateStatus)
-
-	tegSystemStatus := model.TegSystemStatus{}
-	err = connect.GetEndpoint(configuration, client, "/api/system_status", &tegSystemStatus)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegSystemStatus)
-
-	tegSystemGridStatus := model.TegSystemGridStatus{}
-	err = connect.GetEndpoint(configuration, client, "/api/system_status/grid_status", &tegSystemGridStatus)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegSystemGridStatus)
-
-	tegSystemStateOfEnergy := model.TegSystemStateOfEnergy{}
-	err = connect.GetEndpoint(configuration, client, "/api/system_status/soe", &tegSystemStateOfEnergy)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(tegSystemStateOfEnergy)
 
 }
