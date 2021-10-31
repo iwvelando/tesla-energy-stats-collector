@@ -4,6 +4,7 @@ package config
 
 import (
 	"fmt"
+	"time"
 	"github.com/spf13/viper"
 )
 
@@ -43,7 +44,7 @@ type InfluxDB struct {
 
 // Polling holds parameters related to how we poll the Tesla Gateway
 type Polling struct {
-	Interval int
+	Interval time.Duration
 }
 
 // LoadConfiguration takes a file path as input and loads the YAML-formatted

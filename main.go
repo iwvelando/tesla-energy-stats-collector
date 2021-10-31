@@ -8,6 +8,7 @@ import (
 	"github.com/iwvelando/tesla-energy-stats-collector/influxdb"
 	"go.uber.org/zap"
 	"os"
+	"time"
 )
 
 var BuildVersion = "UNKNOWN"
@@ -50,8 +51,7 @@ func main() {
 		panic(err)
 	}
 
-	//tesla, refreshTime, err := connect.Auth(configuration)
-	tesla, _, err := connect.Auth(configuration)
+	tesla, refreshTime, err := connect.Auth(configuration)
 	if err != nil {
 		panic(err)
 	}
@@ -62,11 +62,28 @@ func main() {
 	}
 	defer influxClient.Close()
 
-	metrics, err := connect.GetAll(configuration, tesla)
-	if err != nil {
-		panic(err)
-	}
+	for {
 
-	influxdb.WriteAll(configuration, writeAPI, metrics)
+		if time.Now().After(refreshTime) {
+			tesla, refreshTime, err = connect.Auth(configuration)
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		pollStartTime := time.Now()
+
+		metrics, err := connect.GetAll(configuration, tesla)
+		if err != nil {
+			panic(err)
+		}
+
+		influxdb.WriteAll(configuration, writeAPI, metrics)
+
+		timeRemaining := configuration.Polling.Interval*time.Second - time.Since(pollStartTime)
+		time.Sleep(time.Duration(timeRemaining))
+		continue
+
+	}
 
 }
