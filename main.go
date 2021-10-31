@@ -4,10 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/iwvelando/tesla-energy-stats-collector/config"
-	"os"
-	//        "github.com/iwvelando/tesla-energy-stats-collector/influxdb"
 	"github.com/iwvelando/tesla-energy-stats-collector/connect"
+	"github.com/iwvelando/tesla-energy-stats-collector/influxdb"
 	"go.uber.org/zap"
+	"os"
 )
 
 var BuildVersion = "UNKNOWN"
@@ -50,15 +50,23 @@ func main() {
 		panic(err)
 	}
 
-	client, refreshTime, err := connect.Auth(configuration)
+	tesla, refreshTime, err := connect.Auth(configuration)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(refreshTime)
 
-	err = connect.GetAll(configuration, client)
+	influx, writeAPI, err := influxdb.Connect(configuration)
 	if err != nil {
 		panic(err)
 	}
+	defer influx.Close()
+
+	metrics, err := connect.GetAll(configuration, tesla)
+	if err != nil {
+		panic(err)
+	}
+
+	influxdb.WriteAll(writeAPI, metrics)
 
 }

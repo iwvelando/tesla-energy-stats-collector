@@ -41,6 +41,25 @@ func (r *AuthResponse) ParseTime() error {
 	return nil
 }
 
+// Aggregated metrics structure
+type Teg struct {
+	Meters                 TegMeters
+	MetersStatus           TegMetersStatus
+	Operation              TegOperation
+	Powerwalls             TegPowerwalls
+	SiteInfo               TegSiteInfo
+	Sitemaster             TegSitemaster
+	SolarPowerwall         TegSolarPowerwall
+	Solars                 []TegSolars
+	Status                 TegStatus
+	NetworkConnectionTests TegNetworkConnectionTests
+	SystemTesting          TegSystemTesting
+	UpdateStatus           TegUpdateStatus
+	SystemStatus           TegSystemStatus
+	SystemGridStatus       TegSystemGridStatus
+	SystemStateOfEnergy    TegSystemStateOfEnergy
+}
+
 // Response for /api/meters/aggregates
 type TegMeters struct {
 	Site    TegMetersAggregate `json:"site"`

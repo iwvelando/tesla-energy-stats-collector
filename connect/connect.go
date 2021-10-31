@@ -108,138 +108,110 @@ func GetEndpoint(config *config.Configuration, client *http.Client, endpoint str
 	return nil
 }
 
-func GetAll(config *config.Configuration, client *http.Client) error {
+func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error) {
 
-	tegMeters := model.TegMeters{}
-	err := GetEndpoint(config, client, "/api/meters/aggregates", &tegMeters)
-	if err != nil {
-		return err
-	}
-	err = tegMeters.ParseTime()
-	if err != nil {
-		return err
-	}
-	fmt.Println(tegMeters)
+	teg := model.Teg{}
 
-	tegMetersStatus := model.TegMetersStatus{}
-	err = GetEndpoint(config, client, "/api/meters/status", &tegMetersStatus)
+	err := GetEndpoint(config, client, "/api/meters/aggregates", &teg.Meters)
 	if err != nil {
-		return err
+		return teg, err
 	}
-	fmt.Println(tegMetersStatus)
-
-	tegOperation := model.TegOperation{}
-	err = GetEndpoint(config, client, "/api/operation", &tegOperation)
+	err = teg.Meters.ParseTime()
 	if err != nil {
-		return err
-	}
-	fmt.Println(tegOperation)
-
-	tegPowerwalls := model.TegPowerwalls{}
-	err = GetEndpoint(config, client, "/api/powerwalls", &tegPowerwalls)
-	if err != nil {
-		return err
-	}
-	err = tegPowerwalls.ParseTime()
-	if err != nil {
-		return err
-	}
-	fmt.Println(tegPowerwalls)
-
-	tegSiteInfo := model.TegSiteInfo{}
-	err = GetEndpoint(config, client, "/api/site_info", &tegSiteInfo)
-	if err != nil {
-		return err
-	}
-	fmt.Println(tegSiteInfo)
-
-	tegSitemaster := model.TegSitemaster{}
-	err = GetEndpoint(config, client, "/api/sitemaster", &tegSitemaster)
-	if err != nil {
-		return err
-	}
-	fmt.Println(tegSitemaster)
-
-	tegSolarPowerwall := model.TegSolarPowerwall{}
-	err = GetEndpoint(config, client, "/api/solar_powerwall", &tegSolarPowerwall)
-	if err != nil {
-		return err
-	}
-	err = tegSolarPowerwall.ParseTime()
-	if err != nil {
-		return err
-	}
-	fmt.Println(tegSolarPowerwall)
-
-	tegSolars := []model.TegSolars{}
-	err = GetEndpoint(config, client, "/api/solars", &tegSolars)
-	if err != nil {
-		return err
-	}
-	for _, i := range tegSolars {
-		fmt.Println(i)
+		return teg, err
 	}
 
-	tegNetworkConnectionTests := model.TegNetworkConnectionTests{}
-	err = GetEndpoint(config, client, "/api/system/networks/conn_tests", &tegNetworkConnectionTests)
+	err = GetEndpoint(config, client, "/api/meters/status", &teg.MetersStatus)
 	if err != nil {
-		return err
+		return teg, err
 	}
-	err = tegNetworkConnectionTests.ParseTime()
-	if err != nil {
-		return err
-	}
-	fmt.Println(tegNetworkConnectionTests)
 
-	tegStatus := model.TegStatus{}
-	err = GetEndpoint(config, client, "/api/status", &tegStatus)
+	err = GetEndpoint(config, client, "/api/operation", &teg.Operation)
 	if err != nil {
-		return err
+		return teg, err
 	}
-	err = tegStatus.ParseTime()
-	if err != nil {
-		return err
-	}
-	fmt.Println(tegStatus)
 
-	tegSystemTesting := model.TegSystemTesting{}
-	err = GetEndpoint(config, client, "/api/system/testing", &tegSystemTesting)
+	err = GetEndpoint(config, client, "/api/powerwalls", &teg.Powerwalls)
 	if err != nil {
-		return err
+		return teg, err
 	}
-	fmt.Println(tegSystemTesting)
+	err = teg.Powerwalls.ParseTime()
+	if err != nil {
+		return teg, err
+	}
 
-	tegUpdateStatus := model.TegUpdateStatus{}
-	err = GetEndpoint(config, client, "/api/system/update/status", &tegUpdateStatus)
+	err = GetEndpoint(config, client, "/api/site_info", &teg.SiteInfo)
 	if err != nil {
-		return err
+		return teg, err
 	}
-	fmt.Println(tegUpdateStatus)
 
-	tegSystemStatus := model.TegSystemStatus{}
-	err = GetEndpoint(config, client, "/api/system_status", &tegSystemStatus)
+	err = GetEndpoint(config, client, "/api/sitemaster", &teg.Sitemaster)
 	if err != nil {
-		return err
+		return teg, err
 	}
-	err = tegSystemStatus.ParseFaults()
-	if err != nil {
-		return err
-	}
-	fmt.Println(tegSystemStatus)
 
-	tegSystemGridStatus := model.TegSystemGridStatus{}
-	err = GetEndpoint(config, client, "/api/system_status/grid_status", &tegSystemGridStatus)
+	err = GetEndpoint(config, client, "/api/solar_powerwall", &teg.SolarPowerwall)
 	if err != nil {
-		return err
+		return teg, err
 	}
-	fmt.Println(tegSystemGridStatus)
-
-	tegSystemStateOfEnergy := model.TegSystemStateOfEnergy{}
-	err = GetEndpoint(config, client, "/api/system_status/soe", &tegSystemStateOfEnergy)
+	err = teg.SolarPowerwall.ParseTime()
 	if err != nil {
-		return err
+		return teg, err
 	}
-	fmt.Println(tegSystemStateOfEnergy)
 
-	return nil
+	err = GetEndpoint(config, client, "/api/solars", &teg.Solars)
+	if err != nil {
+		return teg, err
+	}
+
+	err = GetEndpoint(config, client, "/api/system/networks/conn_tests", &teg.NetworkConnectionTests)
+	if err != nil {
+		return teg, err
+	}
+	err = teg.NetworkConnectionTests.ParseTime()
+	if err != nil {
+		return teg, err
+	}
+
+	err = GetEndpoint(config, client, "/api/status", &teg.Status)
+	if err != nil {
+		return teg, err
+	}
+	err = teg.Status.ParseTime()
+	if err != nil {
+		return teg, err
+	}
+
+	err = GetEndpoint(config, client, "/api/system/testing", &teg.SystemTesting)
+	if err != nil {
+		return teg, err
+	}
+
+	err = GetEndpoint(config, client, "/api/system/update/status", &teg.UpdateStatus)
+	if err != nil {
+		return teg, err
+	}
+
+	err = GetEndpoint(config, client, "/api/system_status", &teg.SystemStatus)
+	if err != nil {
+		return teg, err
+	}
+	err = teg.SystemStatus.ParseFaults()
+	if err != nil {
+		return teg, err
+	}
+
+	err = GetEndpoint(config, client, "/api/system_status/grid_status", &teg.SystemGridStatus)
+	if err != nil {
+		return teg, err
+	}
+
+	err = GetEndpoint(config, client, "/api/system_status/soe", &teg.SystemStateOfEnergy)
+	if err != nil {
+		return teg, err
+	}
+
+	fmt.Println(teg)
+
+	return teg, nil
 }
