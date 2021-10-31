@@ -8,6 +8,8 @@ import (
 	"github.com/iwvelando/tesla-energy-stats-collector/influxdb"
 	"go.uber.org/zap"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -67,34 +69,60 @@ func main() {
 	}
 	defer influxClient.Close()
 
-	for {
+	errorsCh := writeAPI.Errors()
 
-		if time.Now().After(refreshTime) {
-			tesla, refreshTime, err = connect.Auth(configuration)
-			if err != nil {
-				logger.Fatal("failed to refresh authentication to Tesla energy gateway",
-					zap.String("op", "connect.Auth"),
-					zap.Error(err),
-				)
-			}
-		}
-
-		pollStartTime := time.Now()
-
-		metrics, err := connect.GetAll(configuration, tesla)
-		if err != nil {
-			logger.Error("failed to query all metrics, waiting for next poll",
-				zap.String("op", "connect.GetAll"),
+	// Monitor InfluxDB write errors
+	go func() {
+		for err := range errorsCh {
+			logger.Error("encountered error on writing to InfluxDB",
+				zap.String("op", "influxdb.WriteAll"),
 				zap.Error(err),
 			)
-		} else {
-			influxdb.WriteAll(configuration, writeAPI, metrics)
 		}
+	}()
 
-		timeRemaining := configuration.Polling.Interval*time.Second - time.Since(pollStartTime)
-		time.Sleep(time.Duration(timeRemaining))
-		continue
+	// Look for SIGTERM or SIGINT
+	cancelCh := make(chan os.Signal, 1)
+	signal.Notify(cancelCh, syscall.SIGTERM, syscall.SIGINT)
 
-	}
+	go func() {
+		for {
+
+			if time.Now().After(refreshTime) {
+				tesla, refreshTime, err = connect.Auth(configuration)
+				if err != nil {
+					logger.Fatal("failed to refresh authentication to Tesla energy gateway",
+						zap.String("op", "connect.Auth"),
+						zap.Error(err),
+					)
+				}
+			}
+
+			pollStartTime := time.Now()
+
+			metrics, err := connect.GetAll(configuration, tesla)
+			if err != nil {
+				logger.Error("failed to query all metrics, waiting for next poll",
+					zap.String("op", "connect.GetAll"),
+					zap.Error(err),
+				)
+			} else {
+				influxdb.WriteAll(configuration, writeAPI, metrics)
+			}
+
+			timeRemaining := configuration.Polling.Interval*time.Second - time.Since(pollStartTime)
+			time.Sleep(time.Duration(timeRemaining))
+			continue
+
+		}
+	}()
+
+	sig := <-cancelCh
+	logger.Info(fmt.Sprintf("caught signal %v, flushing data and closing connections", sig))
+	writeAPI.Flush()
+	influxClient.Close()
+	tesla.CloseIdleConnections()
+
+	return
 
 }
