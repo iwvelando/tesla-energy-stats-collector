@@ -4,8 +4,8 @@ package config
 
 import (
 	"fmt"
-	"time"
 	"github.com/spf13/viper"
+	"time"
 )
 
 // DateTimeLayout is the format expected in config files and is also the output

@@ -341,8 +341,8 @@ type TegPvacStatus struct {
 	InvState        string            `json:"inv_state"`
 	VOut            float64           `json:"v_out"`
 	FOut            float64           `json:"f_out"`
-	POut            int               `json:"p_out"`
-	QOut            int               `json:"q_out"`
+	POut            float64           `json:"p_out"`
+	QOut            float64           `json:"q_out"`
 	IOut            float64           `json:"i_out"`
 	StringVitals    []TegStringVitals `json:"string_vitals"`
 }
@@ -658,8 +658,8 @@ type TegBatteryBlock struct {
 	PinvGridState                   string      `json:"pinv_grid_state"`
 	NominalEnergyRemainingWattHours int         `json:"nominal_energy_remaining"`
 	NominalFullPackEnergy           int         `json:"nominal_full_pack_energy"`
-	POut                            int         `json:"p_out"`
-	QOut                            int         `json:"q_out"`
+	POut                            float64     `json:"p_out"`
+	QOut                            float64     `json:"q_out"`
 	VOut                            float64     `json:"v_out"`
 	FOut                            float64     `json:"f_out"`
 	IOut                            float64     `json:"i_out"`
