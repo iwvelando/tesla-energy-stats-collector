@@ -10,8 +10,9 @@ influxDB:
   address: https://127.0.0.1:8086 # HTTP address for InfluxDB
   username: myuser # (optional) username for authenticating to InfluxDB v1
   password: mypass # (optional) password for authenticating to InfluxDB v1
-  database: mydb # database for use for InfluxDB v1
-  retentionPolicy: autogen # retention policy for database
+  measurementPrefix: tesla_ # (optional) set a prefix for the InfluxDB measurement
+  database: mydb # (v1 only) database for use for InfluxDB v1
+  retentionPolicy: autogen # (v1 only) retention policy for database
   token: mytoken # (v2 only) token for authenticating to InfluxDB; setting this assumes v2
   organization: myorg # (v2 only) sets the organization
   bucket: mybucket # (v2 only) sets the bucket

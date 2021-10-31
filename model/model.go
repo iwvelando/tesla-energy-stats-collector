@@ -62,10 +62,11 @@ type Teg struct {
 
 // Response for /api/meters/aggregates
 type TegMeters struct {
-	Site    TegMetersAggregate `json:"site"`
-	Battery TegMetersAggregate `json:"battery"`
-	Load    TegMetersAggregate `json:"load"`
-	Solar   TegMetersAggregate `json:"solar"`
+	Timestamp time.Time
+	Site      TegMetersAggregate `json:"site"`
+	Battery   TegMetersAggregate `json:"battery"`
+	Load      TegMetersAggregate `json:"load"`
+	Solar     TegMetersAggregate `json:"solar"`
 }
 
 type TegMetersAggregate struct {
@@ -127,19 +128,22 @@ func (r *TegMeters) ParseTime() error {
 
 // Response for /api/meters/status
 type TegMetersStatus struct {
-	Status string      `json:"status"`
-	Errors interface{} `json:"errors"`
-	Serial string      `json:"serial"`
+	Timestamp time.Time
+	Status    string      `json:"status"`
+	Errors    interface{} `json:"errors"`
+	Serial    string      `json:"serial"`
 }
 
 // Response for /api/operation
 type TegOperation struct {
+	Timestamp            time.Time
 	RealMode             string  `json:"real_mode"`
 	BackupReservePercent float64 `json:"backup_reserve_percent"`
 }
 
 // Response for /api/powerwalls
 type TegPowerwalls struct {
+	Timestamp                  time.Time
 	Enumerating                bool              `json:"enumerating"`
 	Updating                   bool              `json:"updating"`
 	CheckingIfOffgrid          bool              `json:"checking_if_offgrid"`
@@ -281,6 +285,7 @@ func (r TegPowerwalls) ParseTime() error {
 
 // Response for /api/site_info
 type TegSiteInfo struct {
+	Timestamp              time.Time
 	MeasuredFrequency      float64             `json:"measured_frequency"`
 	MaxSystemEnergyKwh     float64             `json:"max_system_energy_kWh"`
 	MaxSystemPowerKw       float64             `json:"max_system_power_kW"`
@@ -307,6 +312,7 @@ type TegSiteInfoGridCode struct {
 
 // Response for /api/sitemaster
 type TegSitemaster struct {
+	Timestamp        time.Time
 	Status           string `json:"status"`
 	Running          bool   `json:"running"`
 	ConnectedToTesla bool   `json:"connected_to_tesla"`
@@ -316,6 +322,7 @@ type TegSitemaster struct {
 
 // Response for /api/solar_powerwall
 type TegSolarPowerwall struct {
+	Timestamp           time.Time
 	PvacStatus          TegPvacStatus `json:"pvac_status"`
 	PvsStatus           TegPvsStatus  `json:"pvs_status"`
 	PvPowerLimit        float64       `json:"pv_power_limit"`
@@ -482,6 +489,7 @@ func (r *TegSolarPowerwall) ParseTime() error {
 
 // Response for /api/solars
 type TegSolars struct {
+	Timestamp        time.Time
 	Brand            string `json:"brand"`
 	Model            string `json:"model"`
 	PowerRatingWatts int    `json:"power_rating_watts"`
@@ -489,6 +497,7 @@ type TegSolars struct {
 
 // Response for /api/status
 type TegStatus struct {
+	Timestamp       time.Time
 	GatewayId       string `json:"din"`
 	StartTimeRaw    string `json:"start_time"` // 2021-10-26 16:01:02 +0800
 	StartTime       time.Time
@@ -526,6 +535,7 @@ func (r *TegStatus) ParseTime() error {
 
 // Response for /api/system/networks/conn_tests
 type TegNetworkConnectionTests struct {
+	Timestamp  time.Time
 	Name       string                      `json:"name"`
 	Category   string                      `json:"category"`
 	Disruptive bool                        `json:"disruptive"`
@@ -570,6 +580,7 @@ func (r *TegNetworkConnectionTests) ParseTime() error {
 
 // Response for /api/system/testing
 type TegSystemTesting struct {
+	Timestamp       time.Time
 	Running         bool        `json:"running"`
 	Status          string      `json:"status"`
 	ChargeTests     interface{} `json:"charge_tests"`
@@ -583,6 +594,7 @@ type TegSystemTesting struct {
 
 // Response for /api/system/update/status
 type TegUpdateStatus struct {
+	Timestamp               time.Time
 	State                   string        `json:"state"`
 	Info                    TegUpdateInfo `json:"info"`
 	CurrentTime             int           `json:"current_time"`
@@ -599,6 +611,7 @@ type TegUpdateInfo struct {
 
 // Response for /api/system_status
 type TegSystemStatus struct {
+	Timestamp                       time.Time
 	CommandSource                   string            `json:"command_source"`
 	BatteryTargetPower              float64           `json:"battery_target_power"`
 	BatteryTargetReactivePower      int               `json:"battery_target_reactive_power"`
@@ -695,11 +708,13 @@ func (r *TegSystemStatus) ParseFaults() error {
 
 // Response for /api/system_status/grid_status
 type TegSystemGridStatus struct {
+	Timestamp          time.Time
 	GridStatus         string `json:"grid_status"`
 	GridServicesActive bool   `json:"grid_services_active"`
 }
 
 // Response for /api/system_status/soe
 type TegSystemStateOfEnergy struct {
+	Timestamp  time.Time
 	Percentage float64 `json:"percentage"`
 }

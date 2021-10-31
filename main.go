@@ -50,23 +50,23 @@ func main() {
 		panic(err)
 	}
 
-	tesla, refreshTime, err := connect.Auth(configuration)
+	//tesla, refreshTime, err := connect.Auth(configuration)
+	tesla, _, err := connect.Auth(configuration)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(refreshTime)
 
-	influx, writeAPI, err := influxdb.Connect(configuration)
+	influxClient, writeAPI, err := influxdb.Connect(configuration)
 	if err != nil {
 		panic(err)
 	}
-	defer influx.Close()
+	defer influxClient.Close()
 
 	metrics, err := connect.GetAll(configuration, tesla)
 	if err != nil {
 		panic(err)
 	}
 
-	influxdb.WriteAll(writeAPI, metrics)
+	influxdb.WriteAll(configuration, writeAPI, metrics)
 
 }

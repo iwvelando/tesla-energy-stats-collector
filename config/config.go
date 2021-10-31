@@ -28,15 +28,16 @@ type TeslaGateway struct {
 
 // InfluxDB holds the connection parameters for InfluxDB
 type InfluxDB struct {
-	Address         string
-	Username        string
-	Password        string
-	Database        string
-	RetentionPolicy string
-	Token           string
-	Organization    string
-	Bucket          string
-	SkipVerifySsl   bool
+	Address           string
+	Username          string
+	Password          string
+	MeasurementPrefix string
+	Database          string
+	RetentionPolicy   string
+	Token             string
+	Organization      string
+	Bucket            string
+	SkipVerifySsl     bool
 }
 
 // Polling holds parameters related to how we poll the Tesla Gateway

@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
-	"fmt"
 	"github.com/iwvelando/tesla-energy-stats-collector/config"
 	"github.com/iwvelando/tesla-energy-stats-collector/model"
 	"io/ioutil"
@@ -83,7 +82,6 @@ func Auth(config *config.Configuration) (*http.Client, time.Time, error) {
 }
 
 func GetEndpoint(config *config.Configuration, client *http.Client, endpoint string, data interface{}) error {
-	fmt.Println(endpoint)
 	req, err := http.NewRequest("GET", config.TeslaGateway.Address+endpoint, nil)
 	if err != nil {
 		return err
@@ -116,6 +114,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	if err != nil {
 		return teg, err
 	}
+	teg.Meters.Timestamp = time.Now()
 	err = teg.Meters.ParseTime()
 	if err != nil {
 		return teg, err
@@ -125,16 +124,19 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	if err != nil {
 		return teg, err
 	}
+	teg.MetersStatus.Timestamp = time.Now()
 
 	err = GetEndpoint(config, client, "/api/operation", &teg.Operation)
 	if err != nil {
 		return teg, err
 	}
+	teg.Operation.Timestamp = time.Now()
 
 	err = GetEndpoint(config, client, "/api/powerwalls", &teg.Powerwalls)
 	if err != nil {
 		return teg, err
 	}
+	teg.Powerwalls.Timestamp = time.Now()
 	err = teg.Powerwalls.ParseTime()
 	if err != nil {
 		return teg, err
@@ -144,16 +146,19 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	if err != nil {
 		return teg, err
 	}
+	teg.SiteInfo.Timestamp = time.Now()
 
 	err = GetEndpoint(config, client, "/api/sitemaster", &teg.Sitemaster)
 	if err != nil {
 		return teg, err
 	}
+	teg.Sitemaster.Timestamp = time.Now()
 
 	err = GetEndpoint(config, client, "/api/solar_powerwall", &teg.SolarPowerwall)
 	if err != nil {
 		return teg, err
 	}
+	teg.SolarPowerwall.Timestamp = time.Now()
 	err = teg.SolarPowerwall.ParseTime()
 	if err != nil {
 		return teg, err
@@ -163,11 +168,16 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	if err != nil {
 		return teg, err
 	}
+	ts := time.Now()
+	for i := range teg.Solars {
+		teg.Solars[i].Timestamp = ts
+	}
 
 	err = GetEndpoint(config, client, "/api/system/networks/conn_tests", &teg.NetworkConnectionTests)
 	if err != nil {
 		return teg, err
 	}
+	teg.NetworkConnectionTests.Timestamp = time.Now()
 	err = teg.NetworkConnectionTests.ParseTime()
 	if err != nil {
 		return teg, err
@@ -177,6 +187,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	if err != nil {
 		return teg, err
 	}
+	teg.Status.Timestamp = time.Now()
 	err = teg.Status.ParseTime()
 	if err != nil {
 		return teg, err
@@ -186,16 +197,19 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	if err != nil {
 		return teg, err
 	}
+	teg.SystemTesting.Timestamp = time.Now()
 
 	err = GetEndpoint(config, client, "/api/system/update/status", &teg.UpdateStatus)
 	if err != nil {
 		return teg, err
 	}
+	teg.UpdateStatus.Timestamp = time.Now()
 
 	err = GetEndpoint(config, client, "/api/system_status", &teg.SystemStatus)
 	if err != nil {
 		return teg, err
 	}
+	teg.SystemStatus.Timestamp = time.Now()
 	err = teg.SystemStatus.ParseFaults()
 	if err != nil {
 		return teg, err
@@ -205,13 +219,13 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	if err != nil {
 		return teg, err
 	}
+	teg.SystemGridStatus.Timestamp = time.Now()
 
 	err = GetEndpoint(config, client, "/api/system_status/soe", &teg.SystemStateOfEnergy)
 	if err != nil {
 		return teg, err
 	}
-
-	fmt.Println(teg)
+	teg.SystemStateOfEnergy.Timestamp = time.Now()
 
 	return teg, nil
 }
