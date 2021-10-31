@@ -59,6 +59,7 @@ func main() {
 			zap.Error(err),
 		)
 	}
+	defer tesla.CloseIdleConnections()
 
 	influxClient, writeAPI, err := influxdb.Connect(configuration)
 	if err != nil {
@@ -68,6 +69,7 @@ func main() {
 		)
 	}
 	defer influxClient.Close()
+	defer writeAPI.Flush()
 
 	errorsCh := writeAPI.Errors()
 
