@@ -3,10 +3,12 @@ package influxdb
 import (
 	"crypto/tls"
 	"fmt"
+	"strconv"
 	influx "github.com/influxdata/influxdb-client-go/v2"
 	influxAPI "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/iwvelando/tesla-energy-stats-collector/config"
 	"github.com/iwvelando/tesla-energy-stats-collector/model"
+	"strings"
 )
 
 type InfluxWriteConfigError struct{}
@@ -63,6 +65,16 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 			"site_utility":      metrics.SiteInfo.GridCode.Utility,
 		},
 		map[string]interface{}{
+			"measured_frequency":              metrics.SiteInfo.MeasuredFrequency,
+			"max_system_energy_kwh":           metrics.SiteInfo.MaxSystemEnergyKwh,
+			"max_system_power_kw":             metrics.SiteInfo.MaxSystemPowerKw,
+			"max_site_meter_power_kw":         metrics.SiteInfo.MaxSiteMeterPowerKw,
+			"min_site_meter_power_kw":         metrics.SiteInfo.MinSiteMeterPowerKw,
+			"nominal_system_energy_kwh":       metrics.SiteInfo.NominalSystemEnergyKwh,
+			"nominal_system_power_kw":         metrics.SiteInfo.NominalSystemPowerKw,
+			"panel_max_current":               metrics.SiteInfo.PanelMaxCurrent,
+			"grid_voltage_setting":            metrics.SiteInfo.GridCode.GridVoltageSetting,
+			"grid_frequency_setting":          metrics.SiteInfo.GridCode.GridFreqSetting,
 			"meter_status":                    metrics.MetersStatus.Status,
 			"site_last_comm_time":             metrics.Meters.Site.LastCommunicationTime.UnixNano(),
 			"site_instant_power":              metrics.Meters.Site.InstantPowerWatts,
@@ -240,6 +252,251 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 				"check_message":    check.Message,
 			},
 			metrics.Powerwalls.Timestamp)
+
+		writeAPI.WritePoint(p)
+	}
+
+	// Overall site information and configuration
+	p = influx.NewPoint(
+		config.InfluxDB.MeasurementPrefix+"energy_configuration",
+		map[string]string{
+			"gateway_id":        metrics.Status.GatewayId,
+			"firmware_version":  metrics.Status.FirmwareVersion,
+			"firmware_git_hash": metrics.Status.FirmwareGitHash,
+			"sync_type":         metrics.Status.SyncType,
+			"site_name":         metrics.SiteInfo.SiteName,
+			"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+			"site_country":      metrics.SiteInfo.GridCode.Country,
+			"site_state":        metrics.SiteInfo.GridCode.State,
+			"site_utility":      metrics.SiteInfo.GridCode.Utility,
+		},
+		map[string]interface{}{
+			"mode":                          metrics.Operation.RealMode,
+			"backup_reserve_percent":        metrics.Operation.BackupReservePercent,
+			"freq_shift_load_shed_soe":      metrics.Operation.FreqShiftLoadShedSoe,
+			"freq_shift_load_shed_delta_f":  metrics.Operation.FreqShiftLoadShedDeltaF,
+			"net_meter_mode":                metrics.SiteInfo.NetMeterMode,
+			"sitemaster_status":             metrics.Sitemaster.Status,
+			"sitemaster_running":            metrics.Sitemaster.Running,
+			"sitemaster_connected_to_tesla": metrics.Sitemaster.ConnectedToTesla,
+			"sitemaster_power_supply_mode":  metrics.Sitemaster.PowerSupplyMode,
+			"sitemaster_can_reboot":         metrics.Sitemaster.CanReboot,
+			"grid_status":                   metrics.SystemGridStatus.GridStatus,
+			"grid_services_active":          metrics.SystemGridStatus.GridServicesActive,
+		},
+		metrics.Operation.Timestamp)
+
+	writeAPI.WritePoint(p)
+
+	// Overall network diagnostics
+	p = influx.NewPoint(
+		config.InfluxDB.MeasurementPrefix+"energy_network",
+		map[string]string{
+			"diagnostic":        metrics.NetworkConnectionTests.Name,
+			"category":          metrics.NetworkConnectionTests.Category,
+			"gateway_id":        metrics.Status.GatewayId,
+			"firmware_version":  metrics.Status.FirmwareVersion,
+			"firmware_git_hash": metrics.Status.FirmwareGitHash,
+			"sync_type":         metrics.Status.SyncType,
+			"site_name":         metrics.SiteInfo.SiteName,
+			"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+			"site_country":      metrics.SiteInfo.GridCode.Country,
+			"site_state":        metrics.SiteInfo.GridCode.State,
+			"site_utility":      metrics.SiteInfo.GridCode.Utility,
+		},
+		map[string]interface{}{
+			"disruptive": metrics.NetworkConnectionTests.Disruptive,
+			"alert":      metrics.NetworkConnectionTests.Alert,
+		},
+		metrics.NetworkConnectionTests.Timestamp)
+
+	writeAPI.WritePoint(p)
+
+	// Network connectivity tests
+	for _, check := range metrics.NetworkConnectionTests.Checks {
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_network",
+			map[string]string{
+				"check_name":        check.Name,
+				"diagnostic":        metrics.NetworkConnectionTests.Name,
+				"category":          metrics.NetworkConnectionTests.Category,
+				"gateway_id":        metrics.Status.GatewayId,
+				"firmware_version":  metrics.Status.FirmwareVersion,
+				"firmware_git_hash": metrics.Status.FirmwareGitHash,
+				"sync_type":         metrics.Status.SyncType,
+				"site_name":         metrics.SiteInfo.SiteName,
+				"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+				"site_country":      metrics.SiteInfo.GridCode.Country,
+				"site_state":        metrics.SiteInfo.GridCode.State,
+				"site_utility":      metrics.SiteInfo.GridCode.Utility,
+			},
+			map[string]interface{}{
+				"check_status":     check.Status,
+				"check_start_time": check.StartTime.UnixNano(),
+				"check_end_time":   check.EndTime.UnixNano(),
+			},
+			metrics.NetworkConnectionTests.Timestamp)
+
+		writeAPI.WritePoint(p)
+	}
+
+	// Overall solar information
+	p = influx.NewPoint(
+		config.InfluxDB.MeasurementPrefix+"energy_pv",
+		map[string]string{
+			"gateway_id":        metrics.Status.GatewayId,
+			"firmware_version":  metrics.Status.FirmwareVersion,
+			"firmware_git_hash": metrics.Status.FirmwareGitHash,
+			"sync_type":         metrics.Status.SyncType,
+			"site_name":         metrics.SiteInfo.SiteName,
+			"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+			"site_country":      metrics.SiteInfo.GridCode.Country,
+			"site_state":        metrics.SiteInfo.GridCode.State,
+			"site_utility":      metrics.SiteInfo.GridCode.Utility,
+		},
+		map[string]interface{}{
+			"pv_power_limit":                                 metrics.SolarPowerwall.PvPowerLimit,
+			"power_status_setpoint":                          metrics.SolarPowerwall.PowerStatusSetpoint,
+			"pvac_state":                                     metrics.SolarPowerwall.PvacStatus.State,
+			"pvac_disabled":                                  metrics.SolarPowerwall.PvacStatus.Disabled,
+			"pvac_disabled_reasons":                          strings.Join(metrics.SolarPowerwall.PvacStatus.DisabledReasons[:], ","),
+			"pvac_grid_state":                                metrics.SolarPowerwall.PvacStatus.GridState,
+			"pvac_inv_state":                                 metrics.SolarPowerwall.PvacStatus.InvState,
+			"pvac_v_out":                                     metrics.SolarPowerwall.PvacStatus.VOut,
+			"pvac_f_out":                                     metrics.SolarPowerwall.PvacStatus.FOut,
+			"pvac_p_out":                                     metrics.SolarPowerwall.PvacStatus.POut,
+			"pvac_q_out":                                     metrics.SolarPowerwall.PvacStatus.QOut,
+			"pvac_i_out":                                     metrics.SolarPowerwall.PvacStatus.IOut,
+			"pvac_alerts_last_rx_time":                       metrics.SolarPowerwall.PvacAlerts.LastRxTime.UnixNano(),
+			"pvac_alerts_receive_mux_bitmask":                metrics.SolarPowerwall.PvacAlerts.ReceivedMuxBitmask,
+			"pvac_alerts_a001_inv_l1_hw_overcurrent":         metrics.SolarPowerwall.PvacAlerts.PVACA001InvL1HWOvercurrent,
+			"pvac_alerts_a002_inv_l2_hw_overcurrent":         metrics.SolarPowerwall.PvacAlerts.PVACA002InvL2HWOvercurrent,
+			"pvac_alerts_a003_inv_hvbus_hw_overvoltage":      metrics.SolarPowerwall.PvacAlerts.PVACA003InvHVBusHWOvervoltage,
+			"pvac_alerts_a004_pv_hw_cmpss_oc_stga":           metrics.SolarPowerwall.PvacAlerts.PVACA004PvHWCMPSSOCSTGA,
+			"pvac_alerts_a005_pv_hw_cmpss_oc_stgb":           metrics.SolarPowerwall.PvacAlerts.PVACA005PvHWCMPSSOCSTGB,
+			"pvac_alerts_a006_pv_hw_cmpss_oc_stgc":           metrics.SolarPowerwall.PvacAlerts.PVACA006PvHWCMPSSOCSTGC,
+			"pvac_alerts_a007_pv_hw_cmpss_oc_stgd":           metrics.SolarPowerwall.PvacAlerts.PVACA007PvHWCMPSSOCSTGD,
+			"pvac_alerts_a008_inv_hvbus_undervoltage":        metrics.SolarPowerwall.PvacAlerts.PVACA008InvHVBusUndervoltage,
+			"pvac_alerts_a009_swappboot":                     metrics.SolarPowerwall.PvacAlerts.PVACA009SwAppBoot,
+			"pvac_alerts_a010_inv_ac_overvoltage":            metrics.SolarPowerwall.PvacAlerts.PVACA010InvACOvervoltage,
+			"pvac_alerts_a011_inv_ac_undervoltage":           metrics.SolarPowerwall.PvacAlerts.PVACA011InvACUndervoltage,
+			"pvac_alerts_a012_inv_ac_overfrequency":          metrics.SolarPowerwall.PvacAlerts.PVACA012InvACOverfrequency,
+			"pvac_alerts_a013_inv_ac_underfrequency":         metrics.SolarPowerwall.PvacAlerts.PVACA013InvACUnderfrequency,
+			"pvac_alerts_a014_pvs_disabled_relay":            metrics.SolarPowerwall.PvacAlerts.PVACA014PVSDisabledRelay,
+			"pvac_alerts_a015_pv_hw_allegro_oc_stga":         metrics.SolarPowerwall.PvacAlerts.PVACA015PvHWAllegroOCSTGA,
+			"pvac_alerts_a016_pv_hw_allegro_oc_stgb":         metrics.SolarPowerwall.PvacAlerts.PVACA016PvHWAllegroOCSTGB,
+			"pvac_alerts_a017_pv_hw_allegro_oc_stgc":         metrics.SolarPowerwall.PvacAlerts.PVACA017PvHWAllegroOCSTGC,
+			"pvac_alerts_a018_pv_hw_allegro_oc_stgd":         metrics.SolarPowerwall.PvacAlerts.PVACA018PvHWAllegroOCSTGD,
+			"pvac_alerts_a019_ambient_overtemperature":       metrics.SolarPowerwall.PvacAlerts.PVACA019AmbientOvertemperature,
+			"pvac_alerts_a020_dsp_overtemperature":           metrics.SolarPowerwall.PvacAlerts.PVACA020DspOvertemperature,
+			"pvac_alerts_a021_dcac_heatsink_overtemperature": metrics.SolarPowerwall.PvacAlerts.PVACA021DcacHeatsinkOvertemperature,
+			"pvac_alerts_a022_mppt_heatsink_overtemperature": metrics.SolarPowerwall.PvacAlerts.PVACA022MpptHeatsinkOvertemperature,
+			"pvac_alerts_a023_unused":                        metrics.SolarPowerwall.PvacAlerts.PVACA023Unused,
+			"pvac_alerts_a024_pvacrx_command_mia":            metrics.SolarPowerwall.PvacAlerts.PVACA024PVACrxCommandMia,
+			"pvac_alerts_a025_pvs_status_mia":                metrics.SolarPowerwall.PvacAlerts.PVACA025PVSStatusMia,
+			"pvac_alerts_a026_inv_ac_peak_overvoltage":       metrics.SolarPowerwall.PvacAlerts.PVACA026InvACPeakOvervoltage,
+			"pvac_alerts_a027_inv_k1_relay_welded":           metrics.SolarPowerwall.PvacAlerts.PVACA027InvK1RelayWelded,
+			"pvac_alerts_a028_inv_k2_relay_welded":           metrics.SolarPowerwall.PvacAlerts.PVACA028InvK2RelayWelded,
+			"pvac_alerts_a029_pump_faulted":                  metrics.SolarPowerwall.PvacAlerts.PVACA029PumpFaulted,
+			"pvac_alerts_a030_fan_faulted":                   metrics.SolarPowerwall.PvacAlerts.PVACA030FanFaulted,
+			"pvac_alerts_a031_vfcheck_ov":                    metrics.SolarPowerwall.PvacAlerts.PVACA031VFCheckOV,
+			"pvac_alerts_a032_vfcheck_uv":                    metrics.SolarPowerwall.PvacAlerts.PVACA032VFCheckUV,
+			"pvac_alerts_a033_vfcheck_of":                    metrics.SolarPowerwall.PvacAlerts.PVACA033VFCheckOF,
+			"pvac_alerts_a034_vfcheck_uf":                    metrics.SolarPowerwall.PvacAlerts.PVACA034VFCheckUF,
+			"pvac_alerts_a035_vfcheck_rocof":                 metrics.SolarPowerwall.PvacAlerts.PVACA035VFCheckRoCoF,
+			"pvac_alerts_a036_inv_lost_il_control":           metrics.SolarPowerwall.PvacAlerts.PVACA036InvLostILControl,
+			"pvac_alerts_a037_pvs_processor_nerror":          metrics.SolarPowerwall.PvacAlerts.PVACA037PVSProcessorNERROR,
+			"pvac_alerts_a038_inv_failed_xcap_precharge":     metrics.SolarPowerwall.PvacAlerts.PVACA038InvFailedXcapPrecharge,
+			"pvac_alerts_a039_inv_hvbus_sw_overvoltage":      metrics.SolarPowerwall.PvacAlerts.PVACA039InvHVBusSWOvervoltage,
+			"pvac_alerts_a040_pump_correction_saturated":     metrics.SolarPowerwall.PvacAlerts.PVACA040PumpCorrectionSaturated,
+			"pvac_alerts_a041_excess_pv_clamp_triggered":     metrics.SolarPowerwall.PvacAlerts.PVACA041ExcessPVClampTriggered,
+			"pvs_state":                                  metrics.SolarPowerwall.PvsStatus.State,
+			"pvs_disabled":                               metrics.SolarPowerwall.PvsStatus.Disabled,
+			"pvs_enable_output":                          metrics.SolarPowerwall.PvsStatus.EnableOutput,
+			"pvs_v_ll":                                   metrics.SolarPowerwall.PvsStatus.Vll,
+			"pvs_self_test_state":                        metrics.SolarPowerwall.PvsStatus.SelfTestState,
+			"pvs_alerts_last_rx_time":                    metrics.SolarPowerwall.PvsAlerts.LastRxTime.UnixNano(),
+			"pvs_alerts_receive_mux_bitmask":             metrics.SolarPowerwall.PvsAlerts.ReceivedMuxBitmask,
+			"pvs_alerts_a001_watchdogreset":              metrics.SolarPowerwall.PvsAlerts.PVSA001WatchdogReset,
+			"pvs_alerts_a002_sw_app_boot":                metrics.SolarPowerwall.PvsAlerts.PVSA002SWAppBoot,
+			"pvs_alerts_a003_v12voutofbounds":            metrics.SolarPowerwall.PvsAlerts.PVSA003V12vOutOfBounds,
+			"pvs_alerts_a004_v1v5outofbounds":            metrics.SolarPowerwall.PvsAlerts.PVSA004V1v5OutOfBounds,
+			"pvs_alerts_a005_vafdrefoutofbounds":         metrics.SolarPowerwall.PvsAlerts.PVSA005VAfdRefOutOfBounds,
+			"pvs_alerts_a006_gfovercurrent300":           metrics.SolarPowerwall.PvsAlerts.PVSA006GfOvercurrent300,
+			"pvs_alerts_a007_unused_7":                   metrics.SolarPowerwall.PvsAlerts.PVSA007UNUSED7,
+			"pvs_alerts_a008_unused_8":                   metrics.SolarPowerwall.PvsAlerts.PVSA008UNUSED8,
+			"pvs_alerts_a009_gfovercurrent030":           metrics.SolarPowerwall.PvsAlerts.PVSA009GfOvercurrent030,
+			"pvs_alerts_a010_pvisolationtotal":           metrics.SolarPowerwall.PvsAlerts.PVSA010PvIsolationTotal,
+			"pvs_alerts_a011_pvisolationstringa":         metrics.SolarPowerwall.PvsAlerts.PVSA011PvIsolationStringA,
+			"pvs_alerts_a012_pvisolationstringb":         metrics.SolarPowerwall.PvsAlerts.PVSA012PvIsolationStringB,
+			"pvs_alerts_a013_pvisolationstringc":         metrics.SolarPowerwall.PvsAlerts.PVSA013PvIsolationStringC,
+			"pvs_alerts_a014_pvisolationstringd":         metrics.SolarPowerwall.PvsAlerts.PVSA014PvIsolationStringD,
+			"pvs_alerts_a015_selftestgroundfault":        metrics.SolarPowerwall.PvsAlerts.PVSA015SelfTestGroundFault,
+			"pvs_alerts_a016_esmfault":                   metrics.SolarPowerwall.PvsAlerts.PVSA016ESMFault,
+			"pvs_alerts_a017_mcistringa":                 metrics.SolarPowerwall.PvsAlerts.PVSA017MciStringA,
+			"pvs_alerts_a018_mcistringb":                 metrics.SolarPowerwall.PvsAlerts.PVSA018MciStringB,
+			"pvs_alerts_a019_mcistringc":                 metrics.SolarPowerwall.PvsAlerts.PVSA019MciStringC,
+			"pvs_alerts_a020_mcistringd":                 metrics.SolarPowerwall.PvsAlerts.PVSA020MciStringD,
+			"pvs_alerts_a021_rapidshutdown":              metrics.SolarPowerwall.PvsAlerts.PVSA021RapidShutdown,
+			"pvs_alerts_a022_mci1signallevel":            metrics.SolarPowerwall.PvsAlerts.PVSA022Mci1SignalLevel,
+			"pvs_alerts_a023_mci2signallevel":            metrics.SolarPowerwall.PvsAlerts.PVSA023Mci2SignalLevel,
+			"pvs_alerts_a024_mci3signallevel":            metrics.SolarPowerwall.PvsAlerts.PVSA024Mci3SignalLevel,
+			"pvs_alerts_a025_mci4signallevel":            metrics.SolarPowerwall.PvsAlerts.PVSA025Mci4SignalLevel,
+			"pvs_alerts_a026_mci1pvvoltage":              metrics.SolarPowerwall.PvsAlerts.PVSA026Mci1PvVoltage,
+			"pvs_alerts_a027_mci2pvvoltage":              metrics.SolarPowerwall.PvsAlerts.PVSA027Mci2PvVoltage,
+			"pvs_alerts_a028_systeminitfailed":           metrics.SolarPowerwall.PvsAlerts.PVSA028SystemInitFailed,
+			"pvs_alerts_a029_pvarcfault":                 metrics.SolarPowerwall.PvsAlerts.PVSA029PvArcFault,
+			"pvs_alerts_a030_vdcov":                      metrics.SolarPowerwall.PvsAlerts.PVSA030VDcOv,
+			"pvs_alerts_a031_mci3pvvoltage":              metrics.SolarPowerwall.PvsAlerts.PVSA031Mci3PvVoltage,
+			"pvs_alerts_a032_mci4pvvoltage":              metrics.SolarPowerwall.PvsAlerts.PVSA032Mci4PvVoltage,
+			"pvs_alerts_a033_dataexception":              metrics.SolarPowerwall.PvsAlerts.PVSA033DataException,
+			"pvs_alerts_a034_peimpedance":                metrics.SolarPowerwall.PvsAlerts.PVSA034PeImpedance,
+			"pvs_alerts_a035_pvarcdetected":              metrics.SolarPowerwall.PvsAlerts.PVSA035PvArcDetected,
+			"pvs_alerts_a036_pvarclockout":               metrics.SolarPowerwall.PvsAlerts.PVSA036PvArcLockout,
+			"pvs_alerts_a037_pvarcfault2":                metrics.SolarPowerwall.PvsAlerts.PVSA037PvArcFault2,
+			"pvs_alerts_a038_pvarcfault_selftest":        metrics.SolarPowerwall.PvsAlerts.PVSA038PvArcFaultSelfTest,
+			"pvs_alerts_a039_selftestrelayfault":         metrics.SolarPowerwall.PvsAlerts.PVSA039SelfTestRelayFault,
+			"pvs_alerts_a040_ledirrationalfault":         metrics.SolarPowerwall.PvsAlerts.PVSA040LEDIrrationalFault,
+			"pvs_alerts_a041_mcipowerswitch":             metrics.SolarPowerwall.PvsAlerts.PVSA041MciPowerSwitch,
+			"pvs_alerts_a042_mcipowerfault":              metrics.SolarPowerwall.PvsAlerts.PVSA042MciPowerFault,
+			"pvs_alerts_a043_lockedpvstringsafety":       metrics.SolarPowerwall.PvsAlerts.PVSA043LockedPvStringSafety,
+			"pvs_alerts_a044_faultstatepvstringsafety":   metrics.SolarPowerwall.PvsAlerts.PVSA044FaultStatePvStringSafety,
+			"pvs_alerts_a045_relaycoilirrationalfault":   metrics.SolarPowerwall.PvsAlerts.PVSA045RelayCoilIrrationalFault,
+			"pvs_alerts_a046_relaycoilirrationallockout": metrics.SolarPowerwall.PvsAlerts.PVSA046RelayCoilIrrationalLockout,
+			"pvs_alerts_a047_acsensorirrationalfault":    metrics.SolarPowerwall.PvsAlerts.PVSA047AcSensorIrrationalFault,
+			"pvs_alerts_a048_dcsensorirrationalfault":    metrics.SolarPowerwall.PvsAlerts.PVSA048DcSensorIrrationalFault,
+			"pvs_alerts_a049_arcsignalmibspihealth":      metrics.SolarPowerwall.PvsAlerts.PVSA049ArcSignalMibspiHealth,
+			"pvs_alerts_a050_relaycoilirrationalwarning": metrics.SolarPowerwall.PvsAlerts.PVSA050RelayCoilIrrationalWarning,
+			"pvs_alerts_a051_dcbusshortcircuitdetected":  metrics.SolarPowerwall.PvsAlerts.PVSA051DcBusShortCircuitDetected,
+			"pvs_alerts_a052_pvarcfault_preselftest":     metrics.SolarPowerwall.PvsAlerts.PVSA052PvArcFaultPreSelfTest,
+		},
+		metrics.Operation.Timestamp)
+
+	writeAPI.WritePoint(p)
+
+	// Solar string information
+	for _, stringInverter := range metrics.SolarPowerwall.PvacStatus.StringVitals {
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_pv",
+			map[string]string{
+				"string_id":         strconv.Itoa(stringInverter.StringId),
+				"gateway_id":        metrics.Status.GatewayId,
+				"firmware_version":  metrics.Status.FirmwareVersion,
+				"firmware_git_hash": metrics.Status.FirmwareGitHash,
+				"sync_type":         metrics.Status.SyncType,
+				"site_name":         metrics.SiteInfo.SiteName,
+				"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+				"site_country":      metrics.SiteInfo.GridCode.Country,
+				"site_state":        metrics.SiteInfo.GridCode.State,
+				"site_utility":      metrics.SiteInfo.GridCode.Utility,
+			},
+			map[string]interface{}{
+				"string_connected":        stringInverter.Connected,
+				"string_measured_voltage": stringInverter.MeasuredVoltage,
+				"string_current":          stringInverter.Current,
+				"string_measured_power":   stringInverter.MeasuredPower,
+			},
+			metrics.Operation.Timestamp)
 
 		writeAPI.WritePoint(p)
 	}

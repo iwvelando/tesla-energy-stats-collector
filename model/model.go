@@ -136,9 +136,11 @@ type TegMetersStatus struct {
 
 // Response for /api/operation
 type TegOperation struct {
-	Timestamp            time.Time
-	RealMode             string  `json:"real_mode"`
-	BackupReservePercent float64 `json:"backup_reserve_percent"`
+	Timestamp               time.Time
+	RealMode                string  `json:"real_mode"`
+	BackupReservePercent    float64 `json:"backup_reserve_percent"`
+	FreqShiftLoadShedSoe    int     `json:"freq_shift_load_shed_soe"`
+	FreqShiftLoadShedDeltaF float64 `json:"freq_shift_load_shed_delta_f"`
 }
 
 // Response for /api/powerwalls
