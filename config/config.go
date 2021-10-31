@@ -38,6 +38,7 @@ type InfluxDB struct {
 	Organization      string
 	Bucket            string
 	SkipVerifySsl     bool
+	FlushInterval     uint
 }
 
 // Polling holds parameters related to how we poll the Tesla Gateway

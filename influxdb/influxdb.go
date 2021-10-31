@@ -3,11 +3,11 @@ package influxdb
 import (
 	"crypto/tls"
 	"fmt"
-	"strconv"
 	influx "github.com/influxdata/influxdb-client-go/v2"
 	influxAPI "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/iwvelando/tesla-energy-stats-collector/config"
 	"github.com/iwvelando/tesla-energy-stats-collector/model"
+	"strconv"
 	"strings"
 )
 
@@ -36,7 +36,12 @@ func Connect(config *config.Configuration) (influx.Client, influxAPI.WriteAPI, e
 		return nil, nil, &InfluxWriteConfigError{}
 	}
 
+	if config.InfluxDB.FlushInterval == 0 {
+		config.InfluxDB.FlushInterval = 30
+	}
+
 	options := influx.DefaultOptions().
+		SetFlushInterval(1000 * config.InfluxDB.FlushInterval).
 		SetTLSConfig(&tls.Config{
 			InsecureSkipVerify: config.InfluxDB.SkipVerifySsl,
 		})
