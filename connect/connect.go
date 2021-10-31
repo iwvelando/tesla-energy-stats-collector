@@ -210,6 +210,10 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 		return teg, err
 	}
 	teg.SystemStatus.Timestamp = time.Now()
+	err = teg.SystemStatus.ParseTime()
+	if err != nil {
+		return teg, err
+	}
 	err = teg.SystemStatus.ParseFaults()
 	if err != nil {
 		return teg, err

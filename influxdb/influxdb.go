@@ -205,6 +205,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 
 	writeAPI.WritePoint(p)
 
+	// Powerwall diagnostic check results
 	for _, check := range metrics.Powerwalls.Sync.CommissioningDiagnostic.Checks {
 		p = influx.NewPoint(
 			config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
@@ -257,6 +258,99 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 				"check_message":    check.Message,
 			},
 			metrics.Powerwalls.Timestamp)
+
+		writeAPI.WritePoint(p)
+	}
+
+	// Overall powerwall usage information
+	p = influx.NewPoint(
+		config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+		map[string]string{
+			"gateway_id":        metrics.Status.GatewayId,
+			"firmware_version":  metrics.Status.FirmwareVersion,
+			"firmware_git_hash": metrics.Status.FirmwareGitHash,
+			"sync_type":         metrics.Status.SyncType,
+			"site_name":         metrics.SiteInfo.SiteName,
+			"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+			"site_country":      metrics.SiteInfo.GridCode.Country,
+			"site_state":        metrics.SiteInfo.GridCode.State,
+			"site_utility":      metrics.SiteInfo.GridCode.Utility,
+		},
+		map[string]interface{}{
+			"battery_target_power":                metrics.SystemStatus.BatteryTargetPower,
+			"battery_target_reactive_power":       metrics.SystemStatus.BatteryTargetReactivePower,
+			"nominal_full_pack_energy":            metrics.SystemStatus.NominalFullPackEnergyWattHours,
+			"nominal_energy_remaining_watt_hours": metrics.SystemStatus.NominalEnergyRemainingWattHours,
+			"max_power_energy_remaining":          metrics.SystemStatus.MaxPowerEnergyRemaining,
+			"max_power_energy_to_be_charged":      metrics.SystemStatus.MaxPowerEnergyToBeCharged,
+			"max_charge_power":                    metrics.SystemStatus.MaxChargePowerWatts,
+			"max_discharge_power":                 metrics.SystemStatus.MaxDischargePowerWatts,
+			"max_apparent_power":                  metrics.SystemStatus.MaxApparentPower,
+			"instantaneous_max_discharge_power":   metrics.SystemStatus.InstantaneousMaxDischargePower,
+			"instantaneous_max_charge_power":      metrics.SystemStatus.InstantaneousMaxChargePower,
+			"grid_services_power":                 metrics.SystemStatus.GridServicesPower,
+			"system_island_state":                 metrics.SystemStatus.SystemIslandState,
+			"available_blocks":                    metrics.SystemStatus.AvailableBlocks,
+			"ffr_power_availability_high":         metrics.SystemStatus.FfrPowerAvailabilityHigh,
+			"ffr_power_availability_low":          metrics.SystemStatus.FfrPowerAvailabilityLow,
+			"load_charge_constraint":              metrics.SystemStatus.LoadChargeConstraint,
+			"max_sustained_ramp_rate":             metrics.SystemStatus.MaxSustainedRampRate,
+			"can_reboot":                          metrics.SystemStatus.CanReboot,
+			"smart_inv_delta_p":                   metrics.SystemStatus.SmartInvDeltaP,
+			"smart_inv_delta_q":                   metrics.SystemStatus.SmartInvDeltaQ,
+			"system_status_updating":              metrics.SystemStatus.Updating,
+			"last_toggle_timestamp":               metrics.SystemStatus.LastToggleTimestamp.UnixNano(),
+			"solar_real_power_limit":              metrics.SystemStatus.SolarRealPowerLimit,
+			"score":                               metrics.SystemStatus.Score,
+			"blocks_controlled":                   metrics.SystemStatus.BlocksControlled,
+			"primary":                             metrics.SystemStatus.Primary,
+			"auxiliary_load":                      metrics.SystemStatus.AuxiliaryLoad,
+			"all_enable_lines_high":               metrics.SystemStatus.AllEnableLinesHigh,
+			"inverter_nominal_usable_power":       metrics.SystemStatus.InverterNominalUsablePowerWatts,
+			"expected_energy_remaining":           metrics.SystemStatus.ExpectedEnergyRemaining,
+		},
+		metrics.SystemStatus.Timestamp)
+
+	writeAPI.WritePoint(p)
+
+	// Individual powerwall usage information
+	for _, block := range metrics.SystemStatus.BatteryBlocks {
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+			map[string]string{
+				"powerwall_part_number":   block.PackagePartNumber,
+				"powerwall_serial_number": block.PackageSerialNumber,
+				"gateway_id":              metrics.Status.GatewayId,
+				"firmware_version":        metrics.Status.FirmwareVersion,
+				"firmware_git_hash":       metrics.Status.FirmwareGitHash,
+				"sync_type":               metrics.Status.SyncType,
+				"site_name":               metrics.SiteInfo.SiteName,
+				"site_grid_code":          metrics.SiteInfo.GridCode.GridCode,
+				"site_country":            metrics.SiteInfo.GridCode.Country,
+				"site_state":              metrics.SiteInfo.GridCode.State,
+				"site_utility":            metrics.SiteInfo.GridCode.Utility,
+			},
+			map[string]interface{}{
+				"powerwall_pinv_state":               block.PinvState,
+				"powerwall_pinv_grid_state":          block.PinvGridState,
+				"powerwall_nominal_energy_remaining": block.NominalEnergyRemainingWattHours,
+				"powerwall_nominal_full_pack_energy": block.NominalFullPackEnergy,
+				"powerwall_p_out":                    block.POut,
+				"qowerwall_q_out":                    block.QOut,
+				"powerwall_v_out":                    block.VOut,
+				"powerwall_f_out":                    block.FOut,
+				"powerwall_i_out":                    block.IOut,
+				"powerwall_energy_charged":           block.EnergyCharged,
+				"powerwall_energy_discharged":        block.EnergyDischarged,
+				"powerwall_off_grid":                 block.OffGrid,
+				"powerwall_vf_mode":                  block.VfMode,
+				"powerwall_wobble_detected":          block.WobbleDetected,
+				"powerwall_charge_power_clamped":     block.ChargePowerClamped,
+				"powerwall_backup_ready":             block.BackupReady,
+				"powerwall_op_seq_state":             block.OpSeqState,
+				"powerwall_disabled_reasons":         strings.Join(block.DisabledReasons[:], ","),
+			},
+			metrics.SystemStatus.Timestamp)
 
 		writeAPI.WritePoint(p)
 	}
@@ -504,6 +598,47 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 			metrics.Operation.Timestamp)
 
 		writeAPI.WritePoint(p)
+	}
+
+	// System status grid fault readings
+	var valueString string
+	for _, fault := range metrics.SystemStatus.GridFaults {
+		for _, decodedAlert := range fault.DecodedAlert {
+			switch decodedAlert.Value.(type) {
+			case float64:
+				valueString = fmt.Sprintf("%f", decodedAlert.Value.(float64))
+			default:
+				valueString = decodedAlert.Value.(string)
+			}
+			p = influx.NewPoint(
+				config.InfluxDB.MeasurementPrefix+"energy_faults",
+				map[string]string{
+					"fault_name":        fault.AlertName,
+					"fault_subname":     decodedAlert.Name,
+					"fault_units":       decodedAlert.Units,
+					"gateway_id":        metrics.Status.GatewayId,
+					"firmware_version":  metrics.Status.FirmwareVersion,
+					"firmware_git_hash": metrics.Status.FirmwareGitHash,
+					"sync_type":         metrics.Status.SyncType,
+					"site_name":         metrics.SiteInfo.SiteName,
+					"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+					"site_country":      metrics.SiteInfo.GridCode.Country,
+					"site_state":        metrics.SiteInfo.GridCode.State,
+					"site_utility":      metrics.SiteInfo.GridCode.Utility,
+				},
+				map[string]interface{}{
+					"grid_fault_ts":                  fault.Timestamp,
+					"grid_fault_isfault":             fault.AlertIsFault,
+					"grid_fault_alert_raw":           fault.AlertRaw,
+					"grid_fault_ecu_type":            fault.EcuType,
+					"grid_fault_ecu_part_number":     fault.EcuPackagePartNumber,
+					"grid_fault_ecu_serial_number":   fault.EcuPackageSerialNumber,
+					"grid_fault_decoded_alert_value": valueString,
+				},
+				metrics.SystemStatus.Timestamp)
+
+			writeAPI.WritePoint(p)
+		}
 	}
 
 	return nil

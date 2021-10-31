@@ -638,40 +638,42 @@ type TegSystemStatus struct {
 	CanReboot                       string            `json:"can_reboot"`
 	SmartInvDeltaP                  int               `json:"smart_inv_delta_p"`
 	SmartInvDeltaQ                  int               `json:"smart_inv_delta_q"`
-	LastToggleTimestamp             string            `json:"last_toggle_timestamp"` // DateTimeNano
-	SolarRealPowerLimit             float64           `json:"solar_real_power_limit"`
-	Score                           int               `json:"score"`
-	BlocksControlled                int               `json:"blocks_controlled"`
-	Primary                         bool              `json:"primary"`
-	AuxiliaryLoad                   int               `json:"auxiliary_load"`
-	AllEnableLinesHigh              bool              `json:"all_enable_lines_high"`
-	InverterNominalUsablePowerWatts int               `json:"inverter_nominal_usable_power"`
-	ExpectedEnergyRemaining         int               `json:"expected_energy_remaining"`
+	Updating                        bool              `json:"updating"`
+	LastToggleTimestampRaw          string            `json:"last_toggle_timestamp"` // DateTimeNano
+	LastToggleTimestamp             time.Time
+	SolarRealPowerLimit             float64 `json:"solar_real_power_limit"`
+	Score                           int     `json:"score"`
+	BlocksControlled                int     `json:"blocks_controlled"`
+	Primary                         bool    `json:"primary"`
+	AuxiliaryLoad                   int     `json:"auxiliary_load"`
+	AllEnableLinesHigh              bool    `json:"all_enable_lines_high"`
+	InverterNominalUsablePowerWatts int     `json:"inverter_nominal_usable_power"`
+	ExpectedEnergyRemaining         int     `json:"expected_energy_remaining"`
 }
 
 type TegBatteryBlock struct {
-	Type                            string      `json:"Type"`
-	PackagePartNumber               string      `json:"PackagePartNumber"`
-	PackageSerialNumber             string      `json:"PackageSerialNumber"`
-	DisabledReasons                 interface{} `json:"disabled_reasons"`
-	PinvState                       string      `json:"pinv_state"`
-	PinvGridState                   string      `json:"pinv_grid_state"`
-	NominalEnergyRemainingWattHours int         `json:"nominal_energy_remaining"`
-	NominalFullPackEnergy           int         `json:"nominal_full_pack_energy"`
-	POut                            float64     `json:"p_out"`
-	QOut                            float64     `json:"q_out"`
-	VOut                            float64     `json:"v_out"`
-	FOut                            float64     `json:"f_out"`
-	IOut                            float64     `json:"i_out"`
-	EnergyCharged                   int         `json:"energy_charged"`
-	EnergyDischarged                int         `json:"energy_discharged"`
-	OffGrid                         bool        `json:"off_grid"`
-	VfMode                          bool        `json:"vf_mode"`
-	WobbleDetected                  bool        `json:"wobble_detected"`
-	ChargePowerClamped              bool        `json:"charge_power_clamped"`
-	BackupReady                     bool        `json:"backup_ready"`
-	OpSeqState                      string      `json:"OpSeqState"`
-	Version                         string      `json:"version"`
+	Type                            string   `json:"Type"`
+	PackagePartNumber               string   `json:"PackagePartNumber"`
+	PackageSerialNumber             string   `json:"PackageSerialNumber"`
+	DisabledReasons                 []string `json:"disabled_reasons"`
+	PinvState                       string   `json:"pinv_state"`
+	PinvGridState                   string   `json:"pinv_grid_state"`
+	NominalEnergyRemainingWattHours int      `json:"nominal_energy_remaining"`
+	NominalFullPackEnergy           int      `json:"nominal_full_pack_energy"`
+	POut                            float64  `json:"p_out"`
+	QOut                            float64  `json:"q_out"`
+	VOut                            float64  `json:"v_out"`
+	FOut                            float64  `json:"f_out"`
+	IOut                            float64  `json:"i_out"`
+	EnergyCharged                   int      `json:"energy_charged"`
+	EnergyDischarged                int      `json:"energy_discharged"`
+	OffGrid                         bool     `json:"off_grid"`
+	VfMode                          bool     `json:"vf_mode"`
+	WobbleDetected                  bool     `json:"wobble_detected"`
+	ChargePowerClamped              bool     `json:"charge_power_clamped"`
+	BackupReady                     bool     `json:"backup_ready"`
+	OpSeqState                      string   `json:"OpSeqState"`
+	Version                         string   `json:"version"`
 }
 
 type TegGridFault struct {
@@ -692,6 +694,18 @@ type TegGridAlert struct {
 	Name  string      `json:"name"`
 	Value interface{} `json:"value"` // Observed as string or float64
 	Units string      `json:"units"`
+}
+
+func (r *TegSystemStatus) ParseTime() error {
+	if r.LastToggleTimestampRaw != "" {
+		t, err := time.Parse(DateTimeNano, r.LastToggleTimestampRaw)
+		if err != nil {
+			return err
+		}
+		r.LastToggleTimestamp = t
+	}
+
+	return nil
 }
 
 func (r *TegSystemStatus) ParseFaults() error {

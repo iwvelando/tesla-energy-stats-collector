@@ -45,20 +45,25 @@ func main() {
 	configuration, err := config.LoadConfiguration(cliInputs.Config)
 	if err != nil {
 		logger.Fatal("failed to parse configuration",
-			zap.String("op", "main"),
+			zap.String("op", "config.LoadConfiguration"),
 			zap.Error(err),
 		)
-		panic(err)
 	}
 
 	tesla, refreshTime, err := connect.Auth(configuration)
 	if err != nil {
-		panic(err)
+		logger.Fatal("failed to authenticate to Tesla energy gateway",
+			zap.String("op", "connect.Auth"),
+			zap.Error(err),
+		)
 	}
 
 	influxClient, writeAPI, err := influxdb.Connect(configuration)
 	if err != nil {
-		panic(err)
+		logger.Fatal("failed to authenticate to InfluxDB",
+			zap.String("op", "influxdb.Connect"),
+			zap.Error(err),
+		)
 	}
 	defer influxClient.Close()
 
@@ -67,7 +72,10 @@ func main() {
 		if time.Now().After(refreshTime) {
 			tesla, refreshTime, err = connect.Auth(configuration)
 			if err != nil {
-				panic(err)
+				logger.Fatal("failed to refresh authentication to Tesla energy gateway",
+					zap.String("op", "connect.Auth"),
+					zap.Error(err),
+				)
 			}
 		}
 
@@ -75,10 +83,13 @@ func main() {
 
 		metrics, err := connect.GetAll(configuration, tesla)
 		if err != nil {
-			panic(err)
+			logger.Error("failed to query all metrics, waiting for next poll",
+				zap.String("op", "connect.GetAll"),
+				zap.Error(err),
+			)
+		} else {
+			influxdb.WriteAll(configuration, writeAPI, metrics)
 		}
-
-		influxdb.WriteAll(configuration, writeAPI, metrics)
 
 		timeRemaining := configuration.Polling.Interval*time.Second - time.Since(pollStartTime)
 		time.Sleep(time.Duration(timeRemaining))
