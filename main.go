@@ -120,9 +120,7 @@ func main() {
 	}()
 
 	sig := <-cancelCh
-	logger.Info(fmt.Sprintf("caught signal %v, flushing data and closing connections", sig))
+	logger.Info(fmt.Sprintf("caught signal %v, flushing data to InfluxDB", sig))
 	writeAPI.Flush()
-	influxClient.Close()
-	tesla.CloseIdleConnections()
 
 }
