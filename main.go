@@ -125,6 +125,4 @@ func main() {
 	influxClient.Close()
 	tesla.CloseIdleConnections()
 
-	return
-
 }
