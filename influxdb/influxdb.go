@@ -47,6 +47,7 @@ func Connect(config *config.Configuration) (influx.Client, influxAPI.WriteAPI, e
 
 func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics model.Teg) error {
 
+	// Meters data
 	p := influx.NewPoint(
 		config.InfluxDB.MeasurementPrefix+"energy_meters",
 		map[string]string{
@@ -107,6 +108,141 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 		metrics.Meters.Timestamp)
 
 	writeAPI.WritePoint(p)
+
+	// Overall powerwall info
+	p = influx.NewPoint(
+		config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+		map[string]string{
+			"gateway_id":        metrics.Status.GatewayId,
+			"firmware_version":  metrics.Status.FirmwareVersion,
+			"firmware_git_hash": metrics.Status.FirmwareGitHash,
+			"sync_type":         metrics.Status.SyncType,
+			"site_name":         metrics.SiteInfo.SiteName,
+			"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+			"site_country":      metrics.SiteInfo.GridCode.Country,
+			"site_state":        metrics.SiteInfo.GridCode.State,
+			"site_utility":      metrics.SiteInfo.GridCode.Utility,
+		},
+		map[string]interface{}{
+			"enumerating":                   metrics.Powerwalls.Enumerating,
+			"updating":                      metrics.Powerwalls.Updating,
+			"checking_if_offgrid":           metrics.Powerwalls.CheckingIfOffgrid,
+			"running_phase_detection":       metrics.Powerwalls.RunningPhaseDetection,
+			"bubble_shedding":               metrics.Powerwalls.BubbleShedding,
+			"grid_qualifying":               metrics.Powerwalls.GridQualifying,
+			"grid_code_validating":          metrics.Powerwalls.GridCodeValidating,
+			"phase_detection_not_available": metrics.Powerwalls.PhaseDetectionNotAvailable,
+			"on_grid_check_error":           metrics.Powerwalls.OnGridCheckError,
+			"phase_detection_last_error":    metrics.Powerwalls.PhaseDetectionLastError,
+			"sync_updating":                 metrics.Powerwalls.Sync,
+			"charge_percent":                metrics.SystemStateOfEnergy.Percentage,
+		},
+		metrics.Powerwalls.Timestamp)
+
+	writeAPI.WritePoint(p)
+
+	// Overall powerwall sync diagnostics
+	p = influx.NewPoint(
+		config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+		map[string]string{
+			"diagnostic":        metrics.Powerwalls.Sync.CommissioningDiagnostic.Name,
+			"category":          metrics.Powerwalls.Sync.CommissioningDiagnostic.Category,
+			"gateway_id":        metrics.Status.GatewayId,
+			"firmware_version":  metrics.Status.FirmwareVersion,
+			"firmware_git_hash": metrics.Status.FirmwareGitHash,
+			"sync_type":         metrics.Status.SyncType,
+			"site_name":         metrics.SiteInfo.SiteName,
+			"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+			"site_country":      metrics.SiteInfo.GridCode.Country,
+			"site_state":        metrics.SiteInfo.GridCode.State,
+			"site_utility":      metrics.SiteInfo.GridCode.Utility,
+		},
+		map[string]interface{}{
+			"disruptive": metrics.Powerwalls.Sync.CommissioningDiagnostic.Disruptive,
+			"alert":      metrics.Powerwalls.Sync.CommissioningDiagnostic.Alert,
+		},
+		metrics.Powerwalls.Timestamp)
+
+	writeAPI.WritePoint(p)
+
+	p = influx.NewPoint(
+		config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+		map[string]string{
+			"diagnostic":        metrics.Powerwalls.Sync.UpdateDiagnostic.Name,
+			"category":          metrics.Powerwalls.Sync.UpdateDiagnostic.Category,
+			"gateway_id":        metrics.Status.GatewayId,
+			"firmware_version":  metrics.Status.FirmwareVersion,
+			"firmware_git_hash": metrics.Status.FirmwareGitHash,
+			"sync_type":         metrics.Status.SyncType,
+			"site_name":         metrics.SiteInfo.SiteName,
+			"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+			"site_country":      metrics.SiteInfo.GridCode.Country,
+			"site_state":        metrics.SiteInfo.GridCode.State,
+			"site_utility":      metrics.SiteInfo.GridCode.Utility,
+		},
+		map[string]interface{}{
+			"disruptive": metrics.Powerwalls.Sync.UpdateDiagnostic.Disruptive,
+			"alert":      metrics.Powerwalls.Sync.UpdateDiagnostic.Alert,
+		},
+		metrics.Powerwalls.Timestamp)
+
+	writeAPI.WritePoint(p)
+
+	for _, check := range metrics.Powerwalls.Sync.CommissioningDiagnostic.Checks {
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+			map[string]string{
+				"check_name":        check.Name,
+				"diagnostic":        metrics.Powerwalls.Sync.CommissioningDiagnostic.Name,
+				"category":          metrics.Powerwalls.Sync.CommissioningDiagnostic.Category,
+				"gateway_id":        metrics.Status.GatewayId,
+				"firmware_version":  metrics.Status.FirmwareVersion,
+				"firmware_git_hash": metrics.Status.FirmwareGitHash,
+				"sync_type":         metrics.Status.SyncType,
+				"site_name":         metrics.SiteInfo.SiteName,
+				"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+				"site_country":      metrics.SiteInfo.GridCode.Country,
+				"site_state":        metrics.SiteInfo.GridCode.State,
+				"site_utility":      metrics.SiteInfo.GridCode.Utility,
+			},
+			map[string]interface{}{
+				"check_status":     check.Status,
+				"check_start_time": check.StartTime.UnixNano(),
+				"check_end_time":   check.EndTime.UnixNano(),
+				"check_message":    check.Message,
+			},
+			metrics.Powerwalls.Timestamp)
+
+		writeAPI.WritePoint(p)
+	}
+
+	for _, check := range metrics.Powerwalls.Sync.UpdateDiagnostic.Checks {
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+			map[string]string{
+				"check_name":        check.Name,
+				"diagnostic":        metrics.Powerwalls.Sync.UpdateDiagnostic.Name,
+				"category":          metrics.Powerwalls.Sync.UpdateDiagnostic.Category,
+				"gateway_id":        metrics.Status.GatewayId,
+				"firmware_version":  metrics.Status.FirmwareVersion,
+				"firmware_git_hash": metrics.Status.FirmwareGitHash,
+				"sync_type":         metrics.Status.SyncType,
+				"site_name":         metrics.SiteInfo.SiteName,
+				"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+				"site_country":      metrics.SiteInfo.GridCode.Country,
+				"site_state":        metrics.SiteInfo.GridCode.State,
+				"site_utility":      metrics.SiteInfo.GridCode.Utility,
+			},
+			map[string]interface{}{
+				"check_status":     check.Status,
+				"check_start_time": check.StartTime.UnixNano(),
+				"check_end_time":   check.EndTime.UnixNano(),
+				"check_message":    check.Message,
+			},
+			metrics.Powerwalls.Timestamp)
+
+		writeAPI.WritePoint(p)
+	}
 
 	return nil
 }
