@@ -93,34 +93,30 @@ type TegMetersAggregate struct {
 func (r *TegMeters) ParseTime() error {
 	if r.Site.LastCommunicationTimeRaw != "" {
 		t, err := time.Parse(DateTimeNano, r.Site.LastCommunicationTimeRaw)
-		if err != nil {
-			return err
+		if err == nil {
+			r.Site.LastCommunicationTime = t
 		}
-		r.Site.LastCommunicationTime = t
 	}
 
 	if r.Battery.LastCommunicationTimeRaw != "" {
 		t, err := time.Parse(DateTimeNano, r.Battery.LastCommunicationTimeRaw)
-		if err != nil {
-			return err
+		if err == nil {
+			r.Battery.LastCommunicationTime = t
 		}
-		r.Battery.LastCommunicationTime = t
 	}
 
 	if r.Load.LastCommunicationTimeRaw != "" {
 		t, err := time.Parse(DateTimeNano, r.Load.LastCommunicationTimeRaw)
-		if err != nil {
-			return err
+		if err == nil {
+			r.Load.LastCommunicationTime = t
 		}
-		r.Load.LastCommunicationTime = t
 	}
 
 	if r.Solar.LastCommunicationTimeRaw != "" {
 		t, err := time.Parse(DateTimeNano, r.Solar.LastCommunicationTimeRaw)
-		if err != nil {
-			return err
+		if err == nil {
+			r.Solar.LastCommunicationTime = t
 		}
-		r.Solar.LastCommunicationTime = t
 	}
 
 	return nil
