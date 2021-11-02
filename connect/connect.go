@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/iwvelando/tesla-energy-stats-collector/config"
 	"github.com/iwvelando/tesla-energy-stats-collector/model"
 	"io/ioutil"
@@ -53,7 +54,7 @@ func Auth(config *config.Configuration) (*http.Client, time.Time, error) {
 	}
 	err = bodyJson.ParseTime()
 	if err != nil {
-		return client, time.Now(), err
+		return client, time.Now(), fmt.Errorf("error when parsing authentication time, %s", err)
 	}
 
 	jar, _ := cookiejar.New(nil)
@@ -110,124 +111,138 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 
 	teg := model.Teg{}
 
-	err := GetEndpoint(config, client, "/api/meters/aggregates", &teg.Meters)
+	endpoint := "/api/meters/aggregates"
+	err := GetEndpoint(config, client, endpoint, &teg.Meters)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.Meters.Timestamp = time.Now()
 	err = teg.Meters.ParseTime()
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
 	}
-
-	err = GetEndpoint(config, client, "/api/meters/status", &teg.MetersStatus)
+	endpoint = "/api/meters/status"
+	err = GetEndpoint(config, client, endpoint, &teg.MetersStatus)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.MetersStatus.Timestamp = time.Now()
 
-	err = GetEndpoint(config, client, "/api/operation", &teg.Operation)
+	endpoint = "/api/operation"
+	err = GetEndpoint(config, client, endpoint, &teg.Operation)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.Operation.Timestamp = time.Now()
 
-	err = GetEndpoint(config, client, "/api/powerwalls", &teg.Powerwalls)
+	endpoint = "/api/powerwalls"
+	err = GetEndpoint(config, client, endpoint, &teg.Powerwalls)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.Powerwalls.Timestamp = time.Now()
 	err = teg.Powerwalls.ParseTime()
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
 	}
 
-	err = GetEndpoint(config, client, "/api/site_info", &teg.SiteInfo)
+	endpoint = "/api/site_info"
+	err = GetEndpoint(config, client, endpoint, &teg.SiteInfo)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.SiteInfo.Timestamp = time.Now()
 
-	err = GetEndpoint(config, client, "/api/sitemaster", &teg.Sitemaster)
+	endpoint = "/api/sitemaster"
+	err = GetEndpoint(config, client, endpoint, &teg.Sitemaster)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.Sitemaster.Timestamp = time.Now()
 
-	err = GetEndpoint(config, client, "/api/solar_powerwall", &teg.SolarPowerwall)
+	endpoint = "/api/solar_powerwall"
+	err = GetEndpoint(config, client, endpoint, &teg.SolarPowerwall)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.SolarPowerwall.Timestamp = time.Now()
 	err = teg.SolarPowerwall.ParseTime()
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
 	}
 
-	err = GetEndpoint(config, client, "/api/solars", &teg.Solars)
+	endpoint = "/api/solars"
+	err = GetEndpoint(config, client, endpoint, &teg.Solars)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	ts := time.Now()
 	for i := range teg.Solars {
 		teg.Solars[i].Timestamp = ts
 	}
 
-	err = GetEndpoint(config, client, "/api/system/networks/conn_tests", &teg.NetworkConnectionTests)
+	endpoint = "/api/system/networks/conn_tests"
+	err = GetEndpoint(config, client, endpoint, &teg.NetworkConnectionTests)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.NetworkConnectionTests.Timestamp = time.Now()
 	err = teg.NetworkConnectionTests.ParseTime()
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
 	}
 
-	err = GetEndpoint(config, client, "/api/status", &teg.Status)
+	endpoint = "/api/status"
+	err = GetEndpoint(config, client, endpoint, &teg.Status)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.Status.Timestamp = time.Now()
 	err = teg.Status.ParseTime()
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
 	}
 
-	err = GetEndpoint(config, client, "/api/system/testing", &teg.SystemTesting)
+	endpoint = "/api/system/testing"
+	err = GetEndpoint(config, client, endpoint, &teg.SystemTesting)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.SystemTesting.Timestamp = time.Now()
 
-	err = GetEndpoint(config, client, "/api/system/update/status", &teg.UpdateStatus)
+	endpoint = "/api/system/update/status"
+	err = GetEndpoint(config, client, endpoint, &teg.UpdateStatus)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.UpdateStatus.Timestamp = time.Now()
 
-	err = GetEndpoint(config, client, "/api/system_status", &teg.SystemStatus)
+	endpoint = "/api/system_status"
+	err = GetEndpoint(config, client, endpoint, &teg.SystemStatus)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.SystemStatus.Timestamp = time.Now()
 	err = teg.SystemStatus.ParseTime()
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
 	}
 	err = teg.SystemStatus.ParseFaults()
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when parsing faults for endpoint %s, %s", endpoint, err)
 	}
 
-	err = GetEndpoint(config, client, "/api/system_status/grid_status", &teg.SystemGridStatus)
+	endpoint = "/api/system_status/grid_status"
+	err = GetEndpoint(config, client, endpoint, &teg.SystemGridStatus)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.SystemGridStatus.Timestamp = time.Now()
 
-	err = GetEndpoint(config, client, "/api/system_status/soe", &teg.SystemStateOfEnergy)
+	endpoint = "/api/system_status/soe"
+	err = GetEndpoint(config, client, endpoint, &teg.SystemStateOfEnergy)
 	if err != nil {
-		return teg, err
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.SystemStateOfEnergy.Timestamp = time.Now()
 
