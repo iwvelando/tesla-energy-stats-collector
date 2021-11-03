@@ -141,36 +141,36 @@ type TegOperation struct {
 
 // Response for /api/powerwalls
 type TegPowerwalls struct {
-	Timestamp                  time.Time
-	Enumerating                bool              `json:"enumerating"`
-	Updating                   bool              `json:"updating"`
-	CheckingIfOffgrid          bool              `json:"checking_if_offgrid"`
-	RunningPhaseDetection      bool              `json:"running_phase_detection"`
-	PhaseDetectionLastError    string            `json:"phase_detection_last_error"`
-	BubbleShedding             bool              `json:"bubble_shedding"`
-	OnGridCheckError           string            `json:"on_grid_check_error"`
-	GridQualifying             bool              `json:"grid_qualifying"`
-	GridCodeValidating         bool              `json:"grid_code_validating"`
-	PhaseDetectionNotAvailable bool              `json:"phase_detection_not_available"`
-	Powerwalls                 []TegPowerwall    `json:"powerwalls"`
-	GatewayId                  string            `json:"gateway_din"`
 	Sync                       TegPowerwallsSync `json:"sync"`
-	Msa                        interface{}       `json:"msa"`
-	States                     interface{}       `json:"states"`
+	Timestamp                  time.Time
+	Powerwalls                 []TegPowerwall `json:"powerwalls"`
+	Msa                        interface{}    `json:"msa"`
+	GatewayId                  string         `json:"gateway_din"`
+	PhaseDetectionLastError    string         `json:"phase_detection_last_error"`
+	OnGridCheckError           string         `json:"on_grid_check_error"`
+	States                     interface{}    `json:"states"`
+	BubbleShedding             bool           `json:"bubble_shedding"`
+	GridCodeValidating         bool           `json:"grid_code_validating"`
+	PhaseDetectionNotAvailable bool           `json:"phase_detection_not_available"`
+	RunningPhaseDetection      bool           `json:"running_phase_detection"`
+	CheckingIfOffgrid          bool           `json:"checking_if_offgrid"`
+	Updating                   bool           `json:"updating"`
+	Enumerating                bool           `json:"enumerating"`
+	GridQualifying             bool           `json:"grid_qualifying"`
 }
 
 type TegPowerwall struct {
+	CommissioningDiagnostic     TegPowerwallDiagnostic `json:"commissioning_diagnostic"`
+	UpdateDiagnostic            TegPowerwallDiagnostic `json:"update_diagnostic"`
 	Type                        string                 `json:"Type"`
 	PackagePartNumber           string                 `json:"PackagePartNumber"`
+	GridState                   string                 `json:"grid_state"`
 	PackageSerialNumber         string                 `json:"PackageSerialNumber"`
 	Subtype                     string                 `json:"type"`
-	GridState                   string                 `json:"grid_state"`
+	BcType                      interface{}            `json:"bc_type"`
 	GridReconnectionTimeSeconds int                    `json:"grid_reconnection_time_seconds"`
 	UnderPhaseDetection         bool                   `json:"under_phase_detection"`
 	Updating                    bool                   `json:"updating"`
-	CommissioningDiagnostic     TegPowerwallDiagnostic `json:"commissioning_diagnostic"`
-	UpdateDiagnostic            TegPowerwallDiagnostic `json:"update_diagnostic"`
-	BcType                      interface{}            `json:"bc_type"`
 	InConfig                    bool                   `json:"in_config"`
 }
 
@@ -181,11 +181,11 @@ type TegPowerwallsSync struct {
 }
 
 type TegPowerwallDiagnostic struct {
+	Checks     []TegPowerwallsCheck `json:"checks"`
 	Name       string               `json:"name"`
 	Category   string               `json:"category"`
-	Disruptive bool                 `json:"disruptive"`
 	Inputs     interface{}          `json:"inputs"`
-	Checks     []TegPowerwallsCheck `json:"checks"`
+	Disruptive bool                 `json:"disruptive"`
 	Alert      bool                 `json:"alert"`
 }
 
