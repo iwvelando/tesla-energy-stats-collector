@@ -315,6 +315,10 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 
 	// Individual powerwall usage information
 	for _, block := range metrics.SystemStatus.BatteryBlocks {
+		powerwallChargePercent := 0.0
+		if block.NominalFullPackEnergy > 0 {
+			powerwallChargePercent = float64(block.NominalEnergyRemainingWattHours) / float64(block.NominalFullPackEnergy) * 100.0
+		}
 		p = influx.NewPoint(
 			config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
 			map[string]string{
@@ -335,6 +339,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 				"powerwall_pinv_grid_state":          block.PinvGridState,
 				"powerwall_nominal_energy_remaining": block.NominalEnergyRemainingWattHours,
 				"powerwall_nominal_full_pack_energy": block.NominalFullPackEnergy,
+				"powerwall_charge_percent":           powerwallChargePercent,
 				"powerwall_p_out":                    block.POut,
 				"qowerwall_q_out":                    block.QOut,
 				"powerwall_v_out":                    block.VOut,
