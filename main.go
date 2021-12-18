@@ -6,7 +6,7 @@ import (
 	"github.com/iwvelando/tesla-energy-stats-collector/config"
 	"github.com/iwvelando/tesla-energy-stats-collector/connect"
 	"github.com/iwvelando/tesla-energy-stats-collector/influxdb"
-	"go.uber.org/zap"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,13 +24,6 @@ type CliInputs struct {
 
 func main() {
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		fmt.Println("{\"op\": \"main\", \"level\": \"fatal\", \"msg\": \"failed to initiate logger\"}")
-		panic(err)
-	}
-	defer logger.Sync()
-
 	cliInputs := CliInputs{
 		BuildVersion: BuildVersion,
 	}
@@ -46,27 +39,27 @@ func main() {
 
 	configuration, err := config.LoadConfiguration(cliInputs.Config)
 	if err != nil {
-		logger.Fatal("failed to parse configuration",
-			zap.String("op", "config.LoadConfiguration"),
-			zap.Error(err),
-		)
+		log.WithFields(log.Fields{
+			"op":    "config.LoadConfiguration",
+			"error": err,
+		}).Fatal("failed to parse configuration")
 	}
 
 	tesla, refreshTime, err := connect.Auth(configuration)
 	if err != nil {
-		logger.Fatal("failed to authenticate to Tesla energy gateway",
-			zap.String("op", "connect.Auth"),
-			zap.Error(err),
-		)
+		log.WithFields(log.Fields{
+			"op":    "connect.Auth",
+			"error": err,
+		}).Fatal("failed to authenticate to Tesla energy gateway")
 	}
 	defer tesla.CloseIdleConnections()
 
 	influxClient, writeAPI, err := influxdb.Connect(configuration)
 	if err != nil {
-		logger.Fatal("failed to authenticate to InfluxDB",
-			zap.String("op", "influxdb.Connect"),
-			zap.Error(err),
-		)
+		log.WithFields(log.Fields{
+			"op":    "influxdb.Connect",
+			"error": err,
+		}).Fatal("failed to authenticate to InfluxDB")
 	}
 	defer influxClient.Close()
 	defer writeAPI.Flush()
@@ -76,10 +69,10 @@ func main() {
 	// Monitor InfluxDB write errors
 	go func() {
 		for err := range errorsCh {
-			logger.Error("encountered error on writing to InfluxDB",
-				zap.String("op", "influxdb.WriteAll"),
-				zap.Error(err),
-			)
+			log.WithFields(log.Fields{
+				"op":    "influxdb.WriteAll",
+				"error": err,
+			}).Error("encountered error on writing to InfluxDB")
 		}
 	}()
 
@@ -93,10 +86,10 @@ func main() {
 			if time.Now().After(refreshTime) {
 				tesla, refreshTime, err = connect.Auth(configuration)
 				if err != nil {
-					logger.Fatal("failed to refresh authentication to Tesla energy gateway",
-						zap.String("op", "connect.Auth"),
-						zap.Error(err),
-					)
+					log.WithFields(log.Fields{
+						"op":    "connect.Auth",
+						"error": err,
+					}).Error("failed to refresh authentication to Tesla energy gateway")
 				}
 			}
 
@@ -104,10 +97,10 @@ func main() {
 
 			metrics, err := connect.GetAll(configuration, tesla)
 			if err != nil {
-				logger.Error("failed to query all metrics, waiting for next poll",
-					zap.String("op", "connect.GetAll"),
-					zap.Error(err),
-				)
+				log.WithFields(log.Fields{
+					"op":    "connect.GetAll",
+					"error": err,
+				}).Error("failed to query all metrics, waiting for next poll")
 			} else {
 				influxdb.WriteAll(configuration, writeAPI, metrics)
 			}
@@ -120,7 +113,7 @@ func main() {
 	}()
 
 	sig := <-cancelCh
-	logger.Info(fmt.Sprintf("caught signal %v, flushing data to InfluxDB", sig))
+	log.Info(fmt.Sprintf("caught signal %v, flushing data to InfluxDB", sig))
 	writeAPI.Flush()
 
 }
