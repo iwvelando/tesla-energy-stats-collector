@@ -101,6 +101,7 @@ func GetEndpoint(config *config.Configuration, client *http.Client, endpoint str
 	}
 	err = json.Unmarshal(body, data)
 	if err != nil {
+		err = fmt.Errorf("%w; raw body %s", err, body)
 		return err
 	}
 
