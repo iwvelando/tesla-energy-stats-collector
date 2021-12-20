@@ -40,7 +40,8 @@ type InfluxDB struct {
 
 // Polling holds parameters related to how we poll the Tesla Gateway
 type Polling struct {
-	Interval time.Duration
+	Interval   time.Duration
+	ExitOnFail bool
 }
 
 // LoadConfiguration takes a file path as input and loads the YAML-formatted

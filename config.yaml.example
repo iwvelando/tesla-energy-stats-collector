@@ -22,3 +22,4 @@ influxDB:
 # Polling Configuration
 polling:
   interval: 5 # time in seconds to wait in between Tesla Gateway polling attempts
+  exitOnFail: false # if set to true exit on a failed poll (helpful for allowing systemd to handle retry logic)

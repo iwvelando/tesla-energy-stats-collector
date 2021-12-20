@@ -97,10 +97,19 @@ func main() {
 
 			metrics, err := connect.GetAll(configuration, tesla)
 			if err != nil {
+				var msg string
+				if configuration.Polling.ExitOnFail {
+					msg = "failed to query all metrics, exiting"
+				} else {
+					msg = "failed to query all metrics, waiting for next poll"
+				}
 				log.WithFields(log.Fields{
 					"op":    "connect.GetAll",
 					"error": err,
-				}).Error("failed to query all metrics, waiting for next poll")
+				}).Error(msg)
+				if configuration.Polling.ExitOnFail {
+					os.Exit(1)
+				}
 			} else {
 				influxdb.WriteAll(configuration, writeAPI, metrics)
 			}
