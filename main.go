@@ -122,7 +122,9 @@ func main() {
 	}()
 
 	sig := <-cancelCh
-	log.Info(fmt.Sprintf("caught signal %v, flushing data to InfluxDB", sig))
+	log.WithFields(log.Fields{
+		"op": "main",
+	}).Info(fmt.Sprintf("caught signal %v, flushing data to InfluxDB", sig))
 	writeAPI.Flush()
 
 }
