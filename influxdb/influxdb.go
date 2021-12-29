@@ -151,7 +151,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 			"phase_detection_not_available": metrics.Powerwalls.PhaseDetectionNotAvailable,
 			"on_grid_check_error":           metrics.Powerwalls.OnGridCheckError,
 			"phase_detection_last_error":    metrics.Powerwalls.PhaseDetectionLastError,
-			"sync_updating":                 metrics.Powerwalls.Sync,
+			"sync_updating":                 metrics.Powerwalls.Sync.Updating,
 			"charge_percent":                metrics.SystemStateOfEnergy.Percentage,
 		},
 		metrics.Powerwalls.Timestamp)
