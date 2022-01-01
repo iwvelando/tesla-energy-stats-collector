@@ -622,7 +622,7 @@ type TegSystemStatus struct {
 	MaxApparentPower                int               `json:"max_apparent_power"`
 	InstantaneousMaxDischargePower  int               `json:"instantaneous_max_discharge_power"`
 	InstantaneousMaxChargePower     int               `json:"instantaneous_max_charge_power"`
-	GridServicesPower               int               `json:"grid_services_power"`
+	GridServicesPower               float64           `json:"grid_services_power"`
 	SystemIslandState               string            `json:"system_island_state"`
 	AvailableBlocks                 int               `json:"available_blocks"`
 	BatteryBlocks                   []TegBatteryBlock `json:"battery_blocks"`
