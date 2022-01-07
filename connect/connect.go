@@ -15,6 +15,8 @@ import (
 	"time"
 )
 
+const expectedHttpStatus = 200
+
 func Auth(config *config.Configuration) (*http.Client, time.Time, error) {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: config.TeslaGateway.SkipVerifySsl}
@@ -48,6 +50,13 @@ func Auth(config *config.Configuration) (*http.Client, time.Time, error) {
 	if err != nil {
 		return client, time.Now(), err
 	}
+
+	status := resp.StatusCode
+	if status != expectedHttpStatus {
+		err = fmt.Errorf("expected %s HTTP status code but got %s; raw body %s", expectedHttpStatus, resp.StatusCode, body)
+		return client, time.Now(), err
+	}
+
 	err = json.Unmarshal(body, bodyJson)
 	if err != nil {
 		return client, time.Now(), err
