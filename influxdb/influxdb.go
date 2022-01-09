@@ -7,6 +7,7 @@ import (
 	influxAPI "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/iwvelando/tesla-energy-stats-collector/config"
 	"github.com/iwvelando/tesla-energy-stats-collector/model"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -579,6 +580,50 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 	writeAPI.WritePoint(p)
 
 	// Solar string information
+	for _, stringInverter := range metrics.SolarPowerwall.PvacStatus.StringVitals {
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_pv",
+			map[string]string{
+				"string_id":         strconv.Itoa(stringInverter.StringId),
+				"gateway_id":        metrics.Status.GatewayId,
+				"firmware_version":  metrics.Status.FirmwareVersion,
+				"firmware_git_hash": metrics.Status.FirmwareGitHash,
+				"sync_type":         metrics.Status.SyncType,
+				"site_name":         metrics.SiteInfo.SiteName,
+				"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+				"site_country":      metrics.SiteInfo.GridCode.Country,
+				"site_state":        metrics.SiteInfo.GridCode.State,
+				"site_utility":      metrics.SiteInfo.GridCode.Utility,
+			},
+			map[string]interface{}{
+				"string_connected":        stringInverter.Connected,
+				"string_measured_voltage": stringInverter.MeasuredVoltage,
+				"string_current":          stringInverter.Current,
+				"string_measured_power":   stringInverter.MeasuredPower,
+			},
+			metrics.Operation.Timestamp)
+
+		writeAPI.WritePoint(p)
+	}
+
+	// Solar device information
+	//		p = influx.NewPoint(
+	//			config.InfluxDB.MeasurementPrefix+"energy_solar",
+	//			map[string]string{
+	//				"gateway_id":        metrics.Status.GatewayId,
+	//				"firmware_version":  metrics.Status.FirmwareVersion,
+	//				"firmware_git_hash": metrics.Status.FirmwareGitHash,
+	//				"sync_type":         metrics.Status.SyncType,
+	//				"site_name":         metrics.SiteInfo.SiteName,
+	//				"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
+	//				"site_country":      metrics.SiteInfo.GridCode.Country,
+	//				"site_state":        metrics.SiteInfo.GridCode.State,
+	//				"site_utility":      metrics.SiteInfo.GridCode.Utility,
+	//			},
+	//			map[string]interface{}{
+	//			},
+	//			metrics.Operation.Timestamp)
+	os.Exit(0)
 	for _, stringInverter := range metrics.SolarPowerwall.PvacStatus.StringVitals {
 		p = influx.NewPoint(
 			config.InfluxDB.MeasurementPrefix+"energy_pv",

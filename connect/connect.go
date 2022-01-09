@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"github.com/iwvelando/tesla-energy-stats-collector/config"
 	"github.com/iwvelando/tesla-energy-stats-collector/model"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
@@ -108,7 +110,12 @@ func GetEndpoint(config *config.Configuration, client *http.Client, endpoint str
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(body, data)
+
+	if endpoint == "/api/devices/vitals" {
+		err = proto.Unmarshal(body, data.(protoreflect.ProtoMessage))
+	} else {
+		err = json.Unmarshal(body, data)
+	}
 	if err != nil {
 		err = fmt.Errorf("%w; raw body %s", err, body)
 		return err
@@ -255,6 +262,14 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
 	}
 	teg.SystemStateOfEnergy.Timestamp = time.Now()
+
+	endpoint = "/api/devices/vitals"
+	err = GetEndpoint(config, client, endpoint, &teg.DevicesVitals.DevicesVitalsProto)
+	if err != nil {
+		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
+	}
+	teg.DevicesVitals.Timestamp = time.Now()
+	teg.DevicesVitals.Transform()
 
 	return teg, nil
 }
