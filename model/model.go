@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 )
 
@@ -741,25 +742,25 @@ type TegDevicesVitals struct {
 
 // Transformed device vitals meant for database ingest
 type TegDevices struct {
-	Strings      []TegDeviceStrings
+	Inverters    []TegDeviceInverters
 	Temperatures []TegDeviceTemperatures
 	Alerts       []TegDeviceAlerts
 }
 
-type TegDeviceStrings struct {
+type TegDeviceInverters struct {
 	Din                       string
 	PartNumber                string
 	SerialNumber              string
 	Manufacturer              string
 	ComponentParentDin        string
 	FirmwareVersion           string
-	EcuType                   int32
+	EcuType                   string
 	LastCommunicationTime     time.Time
-	PvacIOut                  float64
 	PvacVL1Ground             float64
 	PvacVL2Ground             float64
 	PvacVHvMinusChassisDC     float64
 	PvacLifetimeEnergyPvTotal float64
+	PvacIOut                  float64
 	PvacVOut                  float64
 	PvacFOut                  float64
 	PvacPOut                  float64
@@ -793,7 +794,7 @@ type TegDeviceTemperatures struct {
 	Manufacturer          string
 	ComponentParentDin    string
 	FirmwareVersion       string
-	EcuType               int32
+	EcuType               string
 	LastCommunicationTime time.Time
 	ThcState              string
 	ThcAmbientTemp        float64
@@ -818,19 +819,19 @@ func (r *TegDevicesVitals) Transform() {
 			for _, attribute := range device.Device.DeviceAttributes {
 				ecuAttributes := attribute.GetTeslaEnergyEcuAttributes()
 				if ecuAttributes != nil && ecuAttributes.GetEcuType() == 296 {
-					stringData := TegDeviceStrings{}
+					stringData := TegDeviceInverters{}
 					stringData.Din = device.Device.Din.GetValue()
 					stringData.PartNumber = device.Device.PartNumber.GetValue()
 					stringData.SerialNumber = device.Device.SerialNumber.GetValue()
 					stringData.Manufacturer = device.Device.Manufacturer.GetValue()
 					stringData.ComponentParentDin = device.Device.ComponentParentDin.GetValue()
 					stringData.FirmwareVersion = device.Device.FirmwareVersion.GetValue()
-					stringData.EcuType = ecuAttributes.GetEcuType()
+					stringData.EcuType = strconv.Itoa(int(ecuAttributes.GetEcuType()))
 					stringData.LastCommunicationTime = device.Device.LastCommunicationTime.AsTime()
 					for _, vital := range devices.Vitals {
 						stringData.getStringVital(*vital)
 					}
-					r.DevicesVitals.Strings = append(r.DevicesVitals.Strings, stringData)
+					r.DevicesVitals.Inverters = append(r.DevicesVitals.Inverters, stringData)
 				}
 			}
 		}
@@ -849,7 +850,7 @@ func (r *TegDevicesVitals) Transform() {
 					tempData.Manufacturer = device.Device.Manufacturer.GetValue()
 					tempData.ComponentParentDin = device.Device.ComponentParentDin.GetValue()
 					tempData.FirmwareVersion = device.Device.FirmwareVersion.GetValue()
-					tempData.EcuType = ecuAttributes.GetEcuType()
+					tempData.EcuType = strconv.Itoa(int(ecuAttributes.GetEcuType()))
 					tempData.LastCommunicationTime = device.Device.LastCommunicationTime.AsTime()
 					for _, vital := range devices.Vitals {
 						tempData.getTempVital(*vital)
@@ -879,7 +880,7 @@ func (r *TegDevicesVitals) Transform() {
 	}
 }
 
-func (r *TegDeviceStrings) getStringVital(v DeviceVital) {
+func (r *TegDeviceInverters) getStringVital(v DeviceVital) {
 	switch *v.Name {
 	case "PVAC_Iout":
 		r.PvacIOut = v.GetFloatValue()

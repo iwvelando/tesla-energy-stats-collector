@@ -7,7 +7,6 @@ import (
 	influxAPI "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/iwvelando/tesla-energy-stats-collector/config"
 	"github.com/iwvelando/tesla-energy-stats-collector/model"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -607,23 +606,234 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 	}
 
 	// Solar device information
-	//		p = influx.NewPoint(
-	//			config.InfluxDB.MeasurementPrefix+"energy_solar",
-	//			map[string]string{
-	//				"gateway_id":        metrics.Status.GatewayId,
-	//				"firmware_version":  metrics.Status.FirmwareVersion,
-	//				"firmware_git_hash": metrics.Status.FirmwareGitHash,
-	//				"sync_type":         metrics.Status.SyncType,
-	//				"site_name":         metrics.SiteInfo.SiteName,
-	//				"site_grid_code":    metrics.SiteInfo.GridCode.GridCode,
-	//				"site_country":      metrics.SiteInfo.GridCode.Country,
-	//				"site_state":        metrics.SiteInfo.GridCode.State,
-	//				"site_utility":      metrics.SiteInfo.GridCode.Utility,
-	//			},
-	//			map[string]interface{}{
-	//			},
-	//			metrics.Operation.Timestamp)
-	os.Exit(0)
+
+	for _, inverter := range metrics.DevicesVitals.DevicesVitals.Inverters {
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_inverters",
+			map[string]string{
+				"gateway_id":                metrics.Status.GatewayId,
+				"firmware_version":          metrics.Status.FirmwareVersion,
+				"firmware_git_hash":         metrics.Status.FirmwareGitHash,
+				"sync_type":                 metrics.Status.SyncType,
+				"site_name":                 metrics.SiteInfo.SiteName,
+				"site_grid_code":            metrics.SiteInfo.GridCode.GridCode,
+				"site_country":              metrics.SiteInfo.GridCode.Country,
+				"site_state":                metrics.SiteInfo.GridCode.State,
+				"site_utility":              metrics.SiteInfo.GridCode.Utility,
+				"din":                       inverter.Din,
+				"part_number":               inverter.PartNumber,
+				"serial_number":             inverter.SerialNumber,
+				"manufacturer":              inverter.Manufacturer,
+				"parent_din":                inverter.ComponentParentDin,
+				"inverter_firmware_version": inverter.FirmwareVersion,
+				"ecu_type":                  inverter.EcuType,
+			},
+			map[string]interface{}{
+				"pvac_vl1_ground":               inverter.PvacVL1Ground,
+				"pvac_vl2_ground":               inverter.PvacVL2Ground,
+				"pvac_v_hv_minus_chassis_dc":    inverter.PvacVHvMinusChassisDC,
+				"pvac_lifetime_energy_pv_total": inverter.PvacLifetimeEnergyPvTotal,
+				"pvac_i_out":                    inverter.PvacIOut,
+				"pvac_v_out":                    inverter.PvacVOut,
+				"pvac_f_out":                    inverter.PvacFOut,
+				"pvac_p_out":                    inverter.PvacPOut,
+				"pvac_q_out":                    inverter.PvacQOut,
+				"pvac_state":                    inverter.PvacState,
+				"pvac_grid_state":               inverter.PvacGridState,
+				"pvac_inv_state":                inverter.PvacInvState,
+				"pvi_power_status_setpoint":     inverter.PviPowerStatusSetpoint,
+			},
+			metrics.DevicesVitals.Timestamp)
+
+		writeAPI.WritePoint(p)
+
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_inverters",
+			map[string]string{
+				"gateway_id":                metrics.Status.GatewayId,
+				"firmware_version":          metrics.Status.FirmwareVersion,
+				"firmware_git_hash":         metrics.Status.FirmwareGitHash,
+				"sync_type":                 metrics.Status.SyncType,
+				"site_name":                 metrics.SiteInfo.SiteName,
+				"site_grid_code":            metrics.SiteInfo.GridCode.GridCode,
+				"site_country":              metrics.SiteInfo.GridCode.Country,
+				"site_state":                metrics.SiteInfo.GridCode.State,
+				"site_utility":              metrics.SiteInfo.GridCode.Utility,
+				"din":                       inverter.Din,
+				"part_number":               inverter.PartNumber,
+				"serial_number":             inverter.SerialNumber,
+				"manufacturer":              inverter.Manufacturer,
+				"parent_din":                inverter.ComponentParentDin,
+				"inverter_firmware_version": inverter.FirmwareVersion,
+				"ecu_type":                  inverter.EcuType,
+				"string_id":                 "A",
+			},
+			map[string]interface{}{
+				"pvac_pv_state":            inverter.PvacPvStateA,
+				"pvac_pv_current":          inverter.PvacPvCurrentA,
+				"pvac_pv_measured_voltage": inverter.PvacPvMeasuredVoltageA,
+				"pvac_pv_measured_power":   inverter.PvacPvMeasuredPowerA,
+			},
+			metrics.DevicesVitals.Timestamp)
+
+		writeAPI.WritePoint(p)
+
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_inverters",
+			map[string]string{
+				"gateway_id":                metrics.Status.GatewayId,
+				"firmware_version":          metrics.Status.FirmwareVersion,
+				"firmware_git_hash":         metrics.Status.FirmwareGitHash,
+				"sync_type":                 metrics.Status.SyncType,
+				"site_name":                 metrics.SiteInfo.SiteName,
+				"site_grid_code":            metrics.SiteInfo.GridCode.GridCode,
+				"site_country":              metrics.SiteInfo.GridCode.Country,
+				"site_state":                metrics.SiteInfo.GridCode.State,
+				"site_utility":              metrics.SiteInfo.GridCode.Utility,
+				"din":                       inverter.Din,
+				"part_number":               inverter.PartNumber,
+				"serial_number":             inverter.SerialNumber,
+				"manufacturer":              inverter.Manufacturer,
+				"parent_din":                inverter.ComponentParentDin,
+				"inverter_firmware_version": inverter.FirmwareVersion,
+				"ecu_type":                  inverter.EcuType,
+				"string_id":                 "B",
+			},
+			map[string]interface{}{
+				"pvac_pv_state":            inverter.PvacPvStateB,
+				"pvac_pv_current":          inverter.PvacPvCurrentB,
+				"pvac_pv_measured_voltage": inverter.PvacPvMeasuredVoltageB,
+				"pvac_pv_measured_power":   inverter.PvacPvMeasuredPowerB,
+			},
+			metrics.DevicesVitals.Timestamp)
+
+		writeAPI.WritePoint(p)
+
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_inverters",
+			map[string]string{
+				"gateway_id":                metrics.Status.GatewayId,
+				"firmware_version":          metrics.Status.FirmwareVersion,
+				"firmware_git_hash":         metrics.Status.FirmwareGitHash,
+				"sync_type":                 metrics.Status.SyncType,
+				"site_name":                 metrics.SiteInfo.SiteName,
+				"site_grid_code":            metrics.SiteInfo.GridCode.GridCode,
+				"site_country":              metrics.SiteInfo.GridCode.Country,
+				"site_state":                metrics.SiteInfo.GridCode.State,
+				"site_utility":              metrics.SiteInfo.GridCode.Utility,
+				"din":                       inverter.Din,
+				"part_number":               inverter.PartNumber,
+				"serial_number":             inverter.SerialNumber,
+				"manufacturer":              inverter.Manufacturer,
+				"parent_din":                inverter.ComponentParentDin,
+				"inverter_firmware_version": inverter.FirmwareVersion,
+				"ecu_type":                  inverter.EcuType,
+				"string_id":                 "C",
+			},
+			map[string]interface{}{
+				"pvac_pv_state":            inverter.PvacPvStateC,
+				"pvac_pv_current":          inverter.PvacPvCurrentC,
+				"pvac_pv_measured_voltage": inverter.PvacPvMeasuredVoltageC,
+				"pvac_pv_measured_power":   inverter.PvacPvMeasuredPowerC,
+			},
+			metrics.DevicesVitals.Timestamp)
+
+		writeAPI.WritePoint(p)
+
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_inverters",
+			map[string]string{
+				"gateway_id":                metrics.Status.GatewayId,
+				"firmware_version":          metrics.Status.FirmwareVersion,
+				"firmware_git_hash":         metrics.Status.FirmwareGitHash,
+				"sync_type":                 metrics.Status.SyncType,
+				"site_name":                 metrics.SiteInfo.SiteName,
+				"site_grid_code":            metrics.SiteInfo.GridCode.GridCode,
+				"site_country":              metrics.SiteInfo.GridCode.Country,
+				"site_state":                metrics.SiteInfo.GridCode.State,
+				"site_utility":              metrics.SiteInfo.GridCode.Utility,
+				"din":                       inverter.Din,
+				"part_number":               inverter.PartNumber,
+				"serial_number":             inverter.SerialNumber,
+				"manufacturer":              inverter.Manufacturer,
+				"parent_din":                inverter.ComponentParentDin,
+				"inverter_firmware_version": inverter.FirmwareVersion,
+				"ecu_type":                  inverter.EcuType,
+				"string_id":                 "D",
+			},
+			map[string]interface{}{
+				"pvac_pv_state":            inverter.PvacPvStateD,
+				"pvac_pv_current":          inverter.PvacPvCurrentD,
+				"pvac_pv_measured_voltage": inverter.PvacPvMeasuredVoltageD,
+				"pvac_pv_measured_power":   inverter.PvacPvMeasuredPowerD,
+			},
+			metrics.DevicesVitals.Timestamp)
+
+		writeAPI.WritePoint(p)
+	}
+
+	for _, temperature := range metrics.DevicesVitals.DevicesVitals.Temperatures {
+		// Device temperature information
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_devices",
+			map[string]string{
+				"gateway_id":              metrics.Status.GatewayId,
+				"firmware_version":        metrics.Status.FirmwareVersion,
+				"firmware_git_hash":       metrics.Status.FirmwareGitHash,
+				"sync_type":               metrics.Status.SyncType,
+				"site_name":               metrics.SiteInfo.SiteName,
+				"site_grid_code":          metrics.SiteInfo.GridCode.GridCode,
+				"site_country":            metrics.SiteInfo.GridCode.Country,
+				"site_state":              metrics.SiteInfo.GridCode.State,
+				"site_utility":            metrics.SiteInfo.GridCode.Utility,
+				"din":                     temperature.Din,
+				"part_number":             temperature.PartNumber,
+				"serial_number":           temperature.SerialNumber,
+				"manufacturer":            temperature.Manufacturer,
+				"parent_din":              temperature.ComponentParentDin,
+				"device_firmware_version": temperature.FirmwareVersion,
+				"ecu_type":                temperature.EcuType,
+			},
+			map[string]interface{}{
+				"thc_state":        temperature.ThcState,
+				"thc_ambient_temp": temperature.ThcAmbientTemp,
+			},
+			metrics.DevicesVitals.Timestamp)
+
+		writeAPI.WritePoint(p)
+	}
+
+	// Device alerts information
+	for _, alertingDevice := range metrics.DevicesVitals.DevicesVitals.Alerts {
+		alerts := make(map[string]interface{})
+		for _, alert := range alertingDevice.Alerts {
+			alerts["alert_"+alert] = true
+		}
+		p = influx.NewPoint(
+			config.InfluxDB.MeasurementPrefix+"energy_devices",
+			map[string]string{
+				"gateway_id":              metrics.Status.GatewayId,
+				"firmware_version":        metrics.Status.FirmwareVersion,
+				"firmware_git_hash":       metrics.Status.FirmwareGitHash,
+				"sync_type":               metrics.Status.SyncType,
+				"site_name":               metrics.SiteInfo.SiteName,
+				"site_grid_code":          metrics.SiteInfo.GridCode.GridCode,
+				"site_country":            metrics.SiteInfo.GridCode.Country,
+				"site_state":              metrics.SiteInfo.GridCode.State,
+				"site_utility":            metrics.SiteInfo.GridCode.Utility,
+				"din":                     alertingDevice.Din,
+				"part_number":             alertingDevice.PartNumber,
+				"serial_number":           alertingDevice.SerialNumber,
+				"manufacturer":            alertingDevice.Manufacturer,
+				"parent_din":              alertingDevice.ComponentParentDin,
+				"device_firmware_version": alertingDevice.FirmwareVersion,
+			},
+			alerts,
+			metrics.DevicesVitals.Timestamp)
+
+		writeAPI.WritePoint(p)
+	}
+
 	for _, stringInverter := range metrics.SolarPowerwall.PvacStatus.StringVitals {
 		p = influx.NewPoint(
 			config.InfluxDB.MeasurementPrefix+"energy_pv",
