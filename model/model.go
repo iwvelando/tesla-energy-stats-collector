@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 )
 
@@ -58,6 +59,7 @@ type Teg struct {
 	SystemStatus           TegSystemStatus
 	SystemGridStatus       TegSystemGridStatus
 	SystemStateOfEnergy    TegSystemStateOfEnergy
+	DevicesVitals          TegDevicesVitals
 }
 
 // Response for /api/meters/aggregates
@@ -729,4 +731,223 @@ type TegSystemGridStatus struct {
 type TegSystemStateOfEnergy struct {
 	Timestamp  time.Time
 	Percentage float64 `json:"percentage"`
+}
+
+// Response for /api/devices/vitals
+type TegDevicesVitals struct {
+	Timestamp          time.Time
+	DevicesVitalsProto DevicesWithVitals
+	DevicesVitals      TegDevices
+}
+
+// Transformed device vitals meant for database ingest
+type TegDevices struct {
+	Inverters    []TegDeviceInverters
+	Temperatures []TegDeviceTemperatures
+	Alerts       []TegDeviceAlerts
+}
+
+type TegDeviceInverters struct {
+	Din                       string
+	PartNumber                string
+	SerialNumber              string
+	Manufacturer              string
+	ComponentParentDin        string
+	FirmwareVersion           string
+	EcuType                   string
+	LastCommunicationTime     time.Time
+	PvacVL1Ground             float64
+	PvacVL2Ground             float64
+	PvacVHvMinusChassisDC     float64
+	PvacLifetimeEnergyPvTotal float64
+	PvacIOut                  float64
+	PvacVOut                  float64
+	PvacFOut                  float64
+	PvacPOut                  float64
+	PvacQOut                  float64
+	PvacState                 string
+	PvacGridState             string
+	PvacInvState              string
+	PviPowerStatusSetpoint    string
+	PvacPvStateA              string
+	PvacPvStateB              string
+	PvacPvStateC              string
+	PvacPvStateD              string
+	PvacPvCurrentA            float64
+	PvacPvCurrentB            float64
+	PvacPvCurrentC            float64
+	PvacPvCurrentD            float64
+	PvacPvMeasuredVoltageA    float64
+	PvacPvMeasuredVoltageB    float64
+	PvacPvMeasuredVoltageC    float64
+	PvacPvMeasuredVoltageD    float64
+	PvacPvMeasuredPowerA      float64
+	PvacPvMeasuredPowerB      float64
+	PvacPvMeasuredPowerC      float64
+	PvacPvMeasuredPowerD      float64
+}
+
+type TegDeviceTemperatures struct {
+	Din                   string
+	PartNumber            string
+	SerialNumber          string
+	Manufacturer          string
+	ComponentParentDin    string
+	FirmwareVersion       string
+	EcuType               string
+	LastCommunicationTime time.Time
+	ThcState              string
+	ThcAmbientTemp        float64
+}
+
+type TegDeviceAlerts struct {
+	Din                   string
+	PartNumber            string
+	SerialNumber          string
+	Manufacturer          string
+	ComponentParentDin    string
+	FirmwareVersion       string
+	LastCommunicationTime time.Time
+	Alerts                []string
+}
+
+func (r *TegDevicesVitals) Transform() {
+
+	// Transform pv string data
+	for _, devices := range r.DevicesVitalsProto.Devices {
+		for _, device := range devices.Device {
+			for _, attribute := range device.Device.DeviceAttributes {
+				ecuAttributes := attribute.GetTeslaEnergyEcuAttributes()
+				if ecuAttributes != nil && ecuAttributes.GetEcuType() == 296 {
+					stringData := TegDeviceInverters{}
+					stringData.Din = device.Device.Din.GetValue()
+					stringData.PartNumber = device.Device.PartNumber.GetValue()
+					stringData.SerialNumber = device.Device.SerialNumber.GetValue()
+					stringData.Manufacturer = device.Device.Manufacturer.GetValue()
+					stringData.ComponentParentDin = device.Device.ComponentParentDin.GetValue()
+					stringData.FirmwareVersion = device.Device.FirmwareVersion.GetValue()
+					stringData.EcuType = strconv.Itoa(int(ecuAttributes.GetEcuType()))
+					stringData.LastCommunicationTime = device.Device.LastCommunicationTime.AsTime()
+					for _, vital := range devices.Vitals {
+						stringData.getStringVital(*vital)
+					}
+					r.DevicesVitals.Inverters = append(r.DevicesVitals.Inverters, stringData)
+				}
+			}
+		}
+	}
+
+	// Transform temperature data
+	for _, devices := range r.DevicesVitalsProto.Devices {
+		for _, device := range devices.Device {
+			for _, attribute := range device.Device.DeviceAttributes {
+				ecuAttributes := attribute.GetTeslaEnergyEcuAttributes()
+				if ecuAttributes != nil && ecuAttributes.GetEcuType() == 224 {
+					tempData := TegDeviceTemperatures{}
+					tempData.Din = device.Device.Din.GetValue()
+					tempData.PartNumber = device.Device.PartNumber.GetValue()
+					tempData.SerialNumber = device.Device.SerialNumber.GetValue()
+					tempData.Manufacturer = device.Device.Manufacturer.GetValue()
+					tempData.ComponentParentDin = device.Device.ComponentParentDin.GetValue()
+					tempData.FirmwareVersion = device.Device.FirmwareVersion.GetValue()
+					tempData.EcuType = strconv.Itoa(int(ecuAttributes.GetEcuType()))
+					tempData.LastCommunicationTime = device.Device.LastCommunicationTime.AsTime()
+					for _, vital := range devices.Vitals {
+						tempData.getTempVital(*vital)
+					}
+					r.DevicesVitals.Temperatures = append(r.DevicesVitals.Temperatures, tempData)
+				}
+			}
+		}
+	}
+
+	// Transform alerts data
+	for _, devices := range r.DevicesVitalsProto.Devices {
+		if len(devices.Alerts) > 0 {
+			for _, device := range devices.Device {
+				alertData := TegDeviceAlerts{}
+				alertData.Din = device.Device.Din.GetValue()
+				alertData.PartNumber = device.Device.PartNumber.GetValue()
+				alertData.SerialNumber = device.Device.SerialNumber.GetValue()
+				alertData.Manufacturer = device.Device.Manufacturer.GetValue()
+				alertData.ComponentParentDin = device.Device.ComponentParentDin.GetValue()
+				alertData.FirmwareVersion = device.Device.FirmwareVersion.GetValue()
+				alertData.LastCommunicationTime = device.Device.LastCommunicationTime.AsTime()
+				alertData.Alerts = devices.Alerts
+				r.DevicesVitals.Alerts = append(r.DevicesVitals.Alerts, alertData)
+			}
+		}
+	}
+}
+
+func (r *TegDeviceInverters) getStringVital(v DeviceVital) {
+	switch *v.Name {
+	case "PVAC_Iout":
+		r.PvacIOut = v.GetFloatValue()
+	case "PVAC_VL1Ground":
+		r.PvacVL1Ground = v.GetFloatValue()
+	case "PVAC_VL2Ground":
+		r.PvacVL2Ground = v.GetFloatValue()
+	case "PVAC_VHvMinusChassisDC":
+		r.PvacVHvMinusChassisDC = v.GetFloatValue()
+	case "PVAC_LifetimeEnergyPV_Total":
+		r.PvacLifetimeEnergyPvTotal = v.GetFloatValue()
+	case "PVAC_Vout":
+		r.PvacVOut = v.GetFloatValue()
+	case "PVAC_Fout":
+		r.PvacFOut = v.GetFloatValue()
+	case "PVAC_Pout":
+		r.PvacPOut = v.GetFloatValue()
+	case "PVAC_Qout":
+		r.PvacQOut = v.GetFloatValue()
+	case "PVAC_State":
+		r.PvacState = v.GetStringValue()
+	case "PVAC_GridState":
+		r.PvacGridState = v.GetStringValue()
+	case "PVAC_InvState":
+		r.PvacInvState = v.GetStringValue()
+	case "PVI-PowerStatusSetpoint":
+		r.PviPowerStatusSetpoint = v.GetStringValue()
+	case "PVAC_PvState_A":
+		r.PvacPvStateA = v.GetStringValue()
+	case "PVAC_PvState_B":
+		r.PvacPvStateB = v.GetStringValue()
+	case "PVAC_PvState_C":
+		r.PvacPvStateC = v.GetStringValue()
+	case "PVAC_PvState_D":
+		r.PvacPvStateD = v.GetStringValue()
+	case "PVAC_PVCurrent_A":
+		r.PvacPvCurrentA = v.GetFloatValue()
+	case "PVAC_PVCurrent_B":
+		r.PvacPvCurrentB = v.GetFloatValue()
+	case "PVAC_PVCurrent_C":
+		r.PvacPvCurrentC = v.GetFloatValue()
+	case "PVAC_PVCurrent_D":
+		r.PvacPvCurrentD = v.GetFloatValue()
+	case "PVAC_PVMeasuredVoltage_A":
+		r.PvacPvMeasuredVoltageA = v.GetFloatValue()
+	case "PVAC_PVMeasuredVoltage_B":
+		r.PvacPvMeasuredVoltageB = v.GetFloatValue()
+	case "PVAC_PVMeasuredVoltage_C":
+		r.PvacPvMeasuredVoltageC = v.GetFloatValue()
+	case "PVAC_PVMeasuredVoltage_D":
+		r.PvacPvMeasuredVoltageD = v.GetFloatValue()
+	case "PVAC_PVMeasuredPower_A":
+		r.PvacPvMeasuredPowerA = v.GetFloatValue()
+	case "PVAC_PVMeasuredPower_B":
+		r.PvacPvMeasuredPowerB = v.GetFloatValue()
+	case "PVAC_PVMeasuredPower_C":
+		r.PvacPvMeasuredPowerC = v.GetFloatValue()
+	case "PVAC_PVMeasuredPower_D":
+		r.PvacPvMeasuredPowerD = v.GetFloatValue()
+	}
+}
+
+func (r *TegDeviceTemperatures) getTempVital(v DeviceVital) {
+	switch *v.Name {
+	case "THC_State":
+		r.ThcState = v.GetStringValue()
+	case "THC_AmbientTemp":
+		r.ThcAmbientTemp = v.GetFloatValue()
+	}
 }

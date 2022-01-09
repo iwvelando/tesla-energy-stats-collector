@@ -8,10 +8,13 @@ import (
 	"fmt"
 	"github.com/iwvelando/tesla-energy-stats-collector/config"
 	"github.com/iwvelando/tesla-energy-stats-collector/model"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"sync"
 	"time"
 )
 
@@ -108,7 +111,12 @@ func GetEndpoint(config *config.Configuration, client *http.Client, endpoint str
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(body, data)
+
+	if endpoint == "/api/devices/vitals" {
+		err = proto.Unmarshal(body, data.(protoreflect.ProtoMessage))
+	} else {
+		err = json.Unmarshal(body, data)
+	}
 	if err != nil {
 		err = fmt.Errorf("%w; raw body %s", err, body)
 		return err
@@ -121,140 +129,250 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 
 	teg := model.Teg{}
 
-	endpoint := "/api/meters/aggregates"
-	err := GetEndpoint(config, client, endpoint, &teg.Meters)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.Meters.Timestamp = time.Now()
-	err = teg.Meters.ParseTime()
-	if err != nil {
-		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
-	}
-	endpoint = "/api/meters/status"
-	err = GetEndpoint(config, client, endpoint, &teg.MetersStatus)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.MetersStatus.Timestamp = time.Now()
+	errChan := make(chan error)
+	wg := sync.WaitGroup{}
 
-	endpoint = "/api/operation"
-	err = GetEndpoint(config, client, endpoint, &teg.Operation)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.Operation.Timestamp = time.Now()
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/meters/aggregates"
+		err := GetEndpoint(config, client, endpoint, &teg.Meters)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.Meters.Timestamp = time.Now()
+		err = teg.Meters.ParseTime()
+		if err != nil {
+			errChan <- fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
+			return
+		}
+	}(&wg)
 
-	endpoint = "/api/powerwalls"
-	err = GetEndpoint(config, client, endpoint, &teg.Powerwalls)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.Powerwalls.Timestamp = time.Now()
-	err = teg.Powerwalls.ParseTime()
-	if err != nil {
-		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
-	}
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/meters/status"
+		err := GetEndpoint(config, client, endpoint, &teg.MetersStatus)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.MetersStatus.Timestamp = time.Now()
+	}(&wg)
 
-	endpoint = "/api/site_info"
-	err = GetEndpoint(config, client, endpoint, &teg.SiteInfo)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.SiteInfo.Timestamp = time.Now()
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/operation"
+		err := GetEndpoint(config, client, endpoint, &teg.Operation)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.Operation.Timestamp = time.Now()
+	}(&wg)
 
-	endpoint = "/api/sitemaster"
-	err = GetEndpoint(config, client, endpoint, &teg.Sitemaster)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.Sitemaster.Timestamp = time.Now()
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/powerwalls"
+		err := GetEndpoint(config, client, endpoint, &teg.Powerwalls)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.Powerwalls.Timestamp = time.Now()
+		err = teg.Powerwalls.ParseTime()
+		if err != nil {
+			errChan <- fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
+			return
+		}
+	}(&wg)
 
-	endpoint = "/api/solar_powerwall"
-	err = GetEndpoint(config, client, endpoint, &teg.SolarPowerwall)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.SolarPowerwall.Timestamp = time.Now()
-	err = teg.SolarPowerwall.ParseTime()
-	if err != nil {
-		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
-	}
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/site_info"
+		err := GetEndpoint(config, client, endpoint, &teg.SiteInfo)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.SiteInfo.Timestamp = time.Now()
+	}(&wg)
 
-	endpoint = "/api/solars"
-	err = GetEndpoint(config, client, endpoint, &teg.Solars)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	ts := time.Now()
-	for i := range teg.Solars {
-		teg.Solars[i].Timestamp = ts
-	}
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/sitemaster"
+		err := GetEndpoint(config, client, endpoint, &teg.Sitemaster)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.Sitemaster.Timestamp = time.Now()
+	}(&wg)
 
-	endpoint = "/api/system/networks/conn_tests"
-	err = GetEndpoint(config, client, endpoint, &teg.NetworkConnectionTests)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.NetworkConnectionTests.Timestamp = time.Now()
-	err = teg.NetworkConnectionTests.ParseTime()
-	if err != nil {
-		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
-	}
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/solar_powerwall"
+		err := GetEndpoint(config, client, endpoint, &teg.SolarPowerwall)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.SolarPowerwall.Timestamp = time.Now()
+		err = teg.SolarPowerwall.ParseTime()
+		if err != nil {
+			errChan <- fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
+			return
+		}
+	}(&wg)
 
-	endpoint = "/api/status"
-	err = GetEndpoint(config, client, endpoint, &teg.Status)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.Status.Timestamp = time.Now()
-	err = teg.Status.ParseTime()
-	if err != nil {
-		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
-	}
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/solars"
+		err := GetEndpoint(config, client, endpoint, &teg.Solars)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		ts := time.Now()
+		for i := range teg.Solars {
+			teg.Solars[i].Timestamp = ts
+		}
+	}(&wg)
 
-	endpoint = "/api/system/testing"
-	err = GetEndpoint(config, client, endpoint, &teg.SystemTesting)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.SystemTesting.Timestamp = time.Now()
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/system/networks/conn_tests"
+		err := GetEndpoint(config, client, endpoint, &teg.NetworkConnectionTests)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.NetworkConnectionTests.Timestamp = time.Now()
+		err = teg.NetworkConnectionTests.ParseTime()
+		if err != nil {
+			errChan <- fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
+			return
+		}
+	}(&wg)
 
-	endpoint = "/api/system/update/status"
-	err = GetEndpoint(config, client, endpoint, &teg.UpdateStatus)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.UpdateStatus.Timestamp = time.Now()
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/status"
+		err := GetEndpoint(config, client, endpoint, &teg.Status)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.Status.Timestamp = time.Now()
+		err = teg.Status.ParseTime()
+		if err != nil {
+			errChan <- fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
+			return
+		}
+	}(&wg)
 
-	endpoint = "/api/system_status"
-	err = GetEndpoint(config, client, endpoint, &teg.SystemStatus)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.SystemStatus.Timestamp = time.Now()
-	err = teg.SystemStatus.ParseTime()
-	if err != nil {
-		return teg, fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
-	}
-	err = teg.SystemStatus.ParseFaults()
-	if err != nil {
-		return teg, fmt.Errorf("error when parsing faults for endpoint %s, %s", endpoint, err)
-	}
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/system/testing"
+		err := GetEndpoint(config, client, endpoint, &teg.SystemTesting)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.SystemTesting.Timestamp = time.Now()
+	}(&wg)
 
-	endpoint = "/api/system_status/grid_status"
-	err = GetEndpoint(config, client, endpoint, &teg.SystemGridStatus)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
-	}
-	teg.SystemGridStatus.Timestamp = time.Now()
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/system/update/status"
+		err := GetEndpoint(config, client, endpoint, &teg.UpdateStatus)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.UpdateStatus.Timestamp = time.Now()
+	}(&wg)
 
-	endpoint = "/api/system_status/soe"
-	err = GetEndpoint(config, client, endpoint, &teg.SystemStateOfEnergy)
-	if err != nil {
-		return teg, fmt.Errorf("error when querying %s, %s", endpoint, err)
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/system_status"
+		err := GetEndpoint(config, client, endpoint, &teg.SystemStatus)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.SystemStatus.Timestamp = time.Now()
+		err = teg.SystemStatus.ParseTime()
+		if err != nil {
+			errChan <- fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
+			return
+		}
+		err = teg.SystemStatus.ParseFaults()
+		if err != nil {
+			errChan <- fmt.Errorf("error when parsing faults for endpoint %s, %s", endpoint, err)
+			return
+		}
+	}(&wg)
+
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/system_status/grid_status"
+		err := GetEndpoint(config, client, endpoint, &teg.SystemGridStatus)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.SystemGridStatus.Timestamp = time.Now()
+	}(&wg)
+
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/system_status/soe"
+		err := GetEndpoint(config, client, endpoint, &teg.SystemStateOfEnergy)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.SystemStateOfEnergy.Timestamp = time.Now()
+	}(&wg)
+
+	wg.Add(1)
+	go func(waitgroup *sync.WaitGroup) {
+		defer waitgroup.Done()
+		endpoint := "/api/devices/vitals"
+		err := GetEndpoint(config, client, endpoint, &teg.DevicesVitals.DevicesVitalsProto)
+		if err != nil {
+			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
+			return
+		}
+		teg.DevicesVitals.Timestamp = time.Now()
+		teg.DevicesVitals.Transform()
+	}(&wg)
+
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
+
+	for err := range errChan {
+		if err != nil {
+			return teg, err
+		}
 	}
-	teg.SystemStateOfEnergy.Timestamp = time.Now()
 
 	return teg, nil
 }
