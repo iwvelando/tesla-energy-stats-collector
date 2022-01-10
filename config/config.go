@@ -1,5 +1,5 @@
 // Package config defines the data structures related to configuration and
-// includes functions for modifying the loading and parsing the config.
+// includes functions for loading and parsing the config.
 package config
 
 import (
