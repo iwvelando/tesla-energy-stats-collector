@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Configuration holds all configuration for finance-forecast.
+// Configuration holds all configuration.
 type Configuration struct {
 	TeslaGateway TeslaGateway
 	InfluxDB     InfluxDB
