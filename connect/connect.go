@@ -217,23 +217,6 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	wg.Add(1)
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
-		endpoint := "/api/solar_powerwall"
-		err := GetEndpoint(config, client, endpoint, &teg.SolarPowerwall)
-		if err != nil {
-			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
-			return
-		}
-		teg.SolarPowerwall.Timestamp = time.Now()
-		err = teg.SolarPowerwall.ParseTime()
-		if err != nil {
-			errChan <- fmt.Errorf("error when parsing time for endpoint %s, %s", endpoint, err)
-			return
-		}
-	}(&wg)
-
-	wg.Add(1)
-	go func(waitgroup *sync.WaitGroup) {
-		defer waitgroup.Done()
 		endpoint := "/api/solars"
 		err := GetEndpoint(config, client, endpoint, &teg.Solars)
 		if err != nil {
