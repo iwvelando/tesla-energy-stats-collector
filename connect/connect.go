@@ -56,7 +56,7 @@ func Auth(config *config.Configuration) (*http.Client, time.Time, error) {
 
 	status := resp.StatusCode
 	if status != expectedHttpStatus {
-		err = fmt.Errorf("expected %s HTTP status code but got %s; raw body %s", expectedHttpStatus, resp.StatusCode, body)
+		err = fmt.Errorf("expected %d HTTP status code but got %d; raw body %s", expectedHttpStatus, resp.StatusCode, body)
 		return client, time.Now(), err
 	}
 
@@ -109,6 +109,12 @@ func GetEndpoint(config *config.Configuration, client *http.Client, endpoint str
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		return err
+	}
+
+	status := resp.StatusCode
+	if status != expectedHttpStatus {
+		err = fmt.Errorf("expected %d HTTP status code but got %d; raw body %s", expectedHttpStatus, resp.StatusCode, body)
 		return err
 	}
 
