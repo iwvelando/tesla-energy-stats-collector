@@ -647,67 +647,62 @@ func (r *TegDevicesVitals) Transform() {
 
 	// Transform pv string data
 	for _, devices := range r.DevicesVitalsProto.Devices {
-		for _, device := range devices.Device {
-			for _, attribute := range device.Device.DeviceAttributes {
-				ecuAttributes := attribute.GetTeslaEnergyEcuAttributes()
-				if ecuAttributes != nil && ecuAttributes.GetEcuType() == 296 {
-					stringData := TegDeviceInverters{}
-					stringData.Din = device.Device.Din.GetValue()
-					stringData.PartNumber = device.Device.PartNumber.GetValue()
-					stringData.SerialNumber = device.Device.SerialNumber.GetValue()
-					stringData.Manufacturer = device.Device.Manufacturer.GetValue()
-					stringData.ComponentParentDin = device.Device.ComponentParentDin.GetValue()
-					stringData.FirmwareVersion = device.Device.FirmwareVersion.GetValue()
-					stringData.EcuType = strconv.Itoa(int(ecuAttributes.GetEcuType()))
-					stringData.LastCommunicationTime = device.Device.LastCommunicationTime.AsTime()
-					for _, vital := range devices.Vitals {
-						stringData.getStringVital(*vital)
-					}
-					r.DevicesVitals.Inverters = append(r.DevicesVitals.Inverters, stringData)
-				}
+		device := devices.Device
+		attribute := device.Device.DeviceAttributes
+		ecuAttributes := attribute.GetTeslaEnergyEcuAttributes()
+		if ecuAttributes != nil && ecuAttributes.GetEcuType() == 296 {
+			stringData := TegDeviceInverters{}
+			stringData.Din = device.Device.Din.GetValue()
+			stringData.PartNumber = device.Device.PartNumber.GetValue()
+			stringData.SerialNumber = device.Device.SerialNumber.GetValue()
+			stringData.Manufacturer = device.Device.Manufacturer.GetValue()
+			stringData.ComponentParentDin = device.Device.ComponentParentDin.GetValue()
+			stringData.FirmwareVersion = device.Device.FirmwareVersion.GetValue()
+			stringData.EcuType = strconv.Itoa(int(ecuAttributes.GetEcuType()))
+			stringData.LastCommunicationTime = device.Device.LastCommunicationTime.AsTime()
+			for _, vital := range devices.Vitals {
+				stringData.getStringVital(*vital)
 			}
+			r.DevicesVitals.Inverters = append(r.DevicesVitals.Inverters, stringData)
 		}
 	}
 
 	// Transform temperature data
 	for _, devices := range r.DevicesVitalsProto.Devices {
-		for _, device := range devices.Device {
-			for _, attribute := range device.Device.DeviceAttributes {
-				ecuAttributes := attribute.GetTeslaEnergyEcuAttributes()
-				if ecuAttributes != nil && ecuAttributes.GetEcuType() == 224 {
-					tempData := TegDeviceTemperatures{}
-					tempData.Din = device.Device.Din.GetValue()
-					tempData.PartNumber = device.Device.PartNumber.GetValue()
-					tempData.SerialNumber = device.Device.SerialNumber.GetValue()
-					tempData.Manufacturer = device.Device.Manufacturer.GetValue()
-					tempData.ComponentParentDin = device.Device.ComponentParentDin.GetValue()
-					tempData.FirmwareVersion = device.Device.FirmwareVersion.GetValue()
-					tempData.EcuType = strconv.Itoa(int(ecuAttributes.GetEcuType()))
-					tempData.LastCommunicationTime = device.Device.LastCommunicationTime.AsTime()
-					for _, vital := range devices.Vitals {
-						tempData.getTempVital(*vital)
-					}
-					r.DevicesVitals.Temperatures = append(r.DevicesVitals.Temperatures, tempData)
-				}
+		device := devices.Device
+		attribute := device.Device.DeviceAttributes
+		ecuAttributes := attribute.GetTeslaEnergyEcuAttributes()
+		if ecuAttributes != nil && ecuAttributes.GetEcuType() == 224 {
+			tempData := TegDeviceTemperatures{}
+			tempData.Din = device.Device.Din.GetValue()
+			tempData.PartNumber = device.Device.PartNumber.GetValue()
+			tempData.SerialNumber = device.Device.SerialNumber.GetValue()
+			tempData.Manufacturer = device.Device.Manufacturer.GetValue()
+			tempData.ComponentParentDin = device.Device.ComponentParentDin.GetValue()
+			tempData.FirmwareVersion = device.Device.FirmwareVersion.GetValue()
+			tempData.EcuType = strconv.Itoa(int(ecuAttributes.GetEcuType()))
+			tempData.LastCommunicationTime = device.Device.LastCommunicationTime.AsTime()
+			for _, vital := range devices.Vitals {
+				tempData.getTempVital(*vital)
 			}
+			r.DevicesVitals.Temperatures = append(r.DevicesVitals.Temperatures, tempData)
 		}
 	}
 
 	// Transform alerts data
 	for _, devices := range r.DevicesVitalsProto.Devices {
 		if len(devices.Alerts) > 0 {
-			for _, device := range devices.Device {
-				alertData := TegDeviceAlerts{}
-				alertData.Din = device.Device.Din.GetValue()
-				alertData.PartNumber = device.Device.PartNumber.GetValue()
-				alertData.SerialNumber = device.Device.SerialNumber.GetValue()
-				alertData.Manufacturer = device.Device.Manufacturer.GetValue()
-				alertData.ComponentParentDin = device.Device.ComponentParentDin.GetValue()
-				alertData.FirmwareVersion = device.Device.FirmwareVersion.GetValue()
-				alertData.LastCommunicationTime = device.Device.LastCommunicationTime.AsTime()
-				alertData.Alerts = devices.Alerts
-				r.DevicesVitals.Alerts = append(r.DevicesVitals.Alerts, alertData)
-			}
+			device := devices.Device
+			alertData := TegDeviceAlerts{}
+			alertData.Din = device.Device.Din.GetValue()
+			alertData.PartNumber = device.Device.PartNumber.GetValue()
+			alertData.SerialNumber = device.Device.SerialNumber.GetValue()
+			alertData.Manufacturer = device.Device.Manufacturer.GetValue()
+			alertData.ComponentParentDin = device.Device.ComponentParentDin.GetValue()
+			alertData.FirmwareVersion = device.Device.FirmwareVersion.GetValue()
+			alertData.LastCommunicationTime = device.Device.LastCommunicationTime.AsTime()
+			alertData.Alerts = devices.Alerts
+			r.DevicesVitals.Alerts = append(r.DevicesVitals.Alerts, alertData)
 		}
 	}
 }
