@@ -283,11 +283,11 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 			"max_power_energy_remaining":          metrics.SystemStatus.MaxPowerEnergyRemaining,
 			"max_power_energy_to_be_charged":      metrics.SystemStatus.MaxPowerEnergyToBeCharged,
 			"max_charge_power":                    metrics.SystemStatus.MaxChargePowerWatts,
-			"max_discharge_power":                 int(metrics.SystemStatus.MaxDischargePowerWatts),
+			"max_discharge_power":                 int(metrics.SystemStatus.MaxDischargePowerWatts), // actual data is float
 			"max_apparent_power":                  metrics.SystemStatus.MaxApparentPower,
 			"instantaneous_max_discharge_power":   metrics.SystemStatus.InstantaneousMaxDischargePower,
 			"instantaneous_max_charge_power":      metrics.SystemStatus.InstantaneousMaxChargePower,
-			"grid_services_power":                 int(metrics.SystemStatus.GridServicesPower),
+			"grid_services_power":                 int(metrics.SystemStatus.GridServicesPower), // actual data is float
 			"system_island_state":                 metrics.SystemStatus.SystemIslandState,
 			"available_blocks":                    metrics.SystemStatus.AvailableBlocks,
 			"ffr_power_availability_high":         metrics.SystemStatus.FfrPowerAvailabilityHigh,

@@ -452,7 +452,7 @@ type TegSystemStatus struct {
 	MaxPowerEnergyRemaining         int               `json:"max_power_energy_remaining"`
 	MaxPowerEnergyToBeCharged       int               `json:"max_power_energy_to_be_charged"`
 	MaxChargePowerWatts             int               `json:"max_charge_power"`
-	MaxDischargePowerWatts          int               `json:"max_discharge_power"`
+	MaxDischargePowerWatts          float64           `json:"max_discharge_power"`
 	MaxApparentPower                int               `json:"max_apparent_power"`
 	InstantaneousMaxDischargePower  int               `json:"instantaneous_max_discharge_power"`
 	InstantaneousMaxChargePower     int               `json:"instantaneous_max_charge_power"`
