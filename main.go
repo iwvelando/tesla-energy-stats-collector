@@ -29,7 +29,7 @@ func main() {
 	}
 	flags := flag.NewFlagSet("tesla-energy-stats-collector", 0)
 	flags.StringVar(&cliInputs.Config, "config", "config.yaml", "Set the location for the YAML config file")
-	flags.BoolVar(&cliInputs.ShowVersion, "version", false, "Print the version of modem-script")
+	flags.BoolVar(&cliInputs.ShowVersion, "version", false, "Print the version of tesla-energy-stats-collector")
 	flags.Parse(os.Args[1:])
 
 	if cliInputs.ShowVersion {
