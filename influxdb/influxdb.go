@@ -290,8 +290,8 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 			"grid_services_power":                 int(metrics.SystemStatus.GridServicesPower), // actual data is float
 			"system_island_state":                 metrics.SystemStatus.SystemIslandState,
 			"available_blocks":                    metrics.SystemStatus.AvailableBlocks,
-			"ffr_power_availability_high":         metrics.SystemStatus.FfrPowerAvailabilityHigh,
-			"ffr_power_availability_low":          metrics.SystemStatus.FfrPowerAvailabilityLow,
+			"ffr_power_availability_high":         int(metrics.SystemStatus.FfrPowerAvailabilityHigh), // actual data is float
+			"ffr_power_availability_low":          int(metrics.SystemStatus.FfrPowerAvailabilityLow),  // actual data is float
 			"load_charge_constraint":              metrics.SystemStatus.LoadChargeConstraint,
 			"max_sustained_ramp_rate":             metrics.SystemStatus.MaxSustainedRampRate,
 			"can_reboot":                          metrics.SystemStatus.CanReboot,

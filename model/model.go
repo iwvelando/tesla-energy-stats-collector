@@ -460,8 +460,8 @@ type TegSystemStatus struct {
 	SystemIslandState               string            `json:"system_island_state"`
 	AvailableBlocks                 int               `json:"available_blocks"`
 	BatteryBlocks                   []TegBatteryBlock `json:"battery_blocks"`
-	FfrPowerAvailabilityHigh        int               `json:"ffr_power_availability_high"`
-	FfrPowerAvailabilityLow         int               `json:"ffr_power_availability_low"`
+	FfrPowerAvailabilityHigh        float64           `json:"ffr_power_availability_high"`
+	FfrPowerAvailabilityLow         float64           `json:"ffr_power_availability_low"`
 	LoadChargeConstraint            int               `json:"load_charge_constraint"`
 	MaxSustainedRampRate            int               `json:"max_sustained_ramp_rate"`
 	GridFaults                      []TegGridFault    `json:"grid_faults"`
