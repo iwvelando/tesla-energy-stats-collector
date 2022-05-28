@@ -16,46 +16,46 @@ func (r *InfluxWriteConfigError) Error() string {
 	return "must configure at least one of bucket or database/retention policy"
 }
 
-func Connect(config *config.Configuration) (influx.Client, influxAPI.WriteAPI, error) {
+func Connect(conf *config.Configuration) (influx.Client, influxAPI.WriteAPI, error) {
 	var auth string
-	if config.InfluxDB.Token != "" {
-		auth = config.InfluxDB.Token
-	} else if config.InfluxDB.Username != "" && config.InfluxDB.Password != "" {
-		auth = fmt.Sprintf("%s:%s", config.InfluxDB.Username, config.InfluxDB.Password)
+	if conf.InfluxDB.Token != "" {
+		auth = conf.InfluxDB.Token
+	} else if conf.InfluxDB.Username != "" && conf.InfluxDB.Password != "" {
+		auth = fmt.Sprintf("%s:%s", conf.InfluxDB.Username, conf.InfluxDB.Password)
 	} else {
 		auth = ""
 	}
 
 	var writeDest string
-	if config.InfluxDB.Bucket != "" {
-		writeDest = config.InfluxDB.Bucket
-	} else if config.InfluxDB.Database != "" && config.InfluxDB.RetentionPolicy != "" {
-		writeDest = fmt.Sprintf("%s/%s", config.InfluxDB.Database, config.InfluxDB.RetentionPolicy)
+	if conf.InfluxDB.Bucket != "" {
+		writeDest = conf.InfluxDB.Bucket
+	} else if conf.InfluxDB.Database != "" && conf.InfluxDB.RetentionPolicy != "" {
+		writeDest = fmt.Sprintf("%s/%s", conf.InfluxDB.Database, conf.InfluxDB.RetentionPolicy)
 	} else {
 		return nil, nil, &InfluxWriteConfigError{}
 	}
 
-	if config.InfluxDB.FlushInterval == 0 {
-		config.InfluxDB.FlushInterval = 30
+	if conf.InfluxDB.FlushInterval == 0 {
+		conf.InfluxDB.FlushInterval = 30
 	}
 
 	options := influx.DefaultOptions().
-		SetFlushInterval(1000 * config.InfluxDB.FlushInterval).
+		SetFlushInterval(1000 * conf.InfluxDB.FlushInterval).
 		SetTLSConfig(&tls.Config{
-			InsecureSkipVerify: config.InfluxDB.SkipVerifySsl,
+			InsecureSkipVerify: conf.InfluxDB.SkipVerifySsl,
 		})
-	client := influx.NewClientWithOptions(config.InfluxDB.Address, auth, options)
+	client := influx.NewClientWithOptions(conf.InfluxDB.Address, auth, options)
 
-	writeAPI := client.WriteAPI(config.InfluxDB.Organization, writeDest)
+	writeAPI := client.WriteAPI(conf.InfluxDB.Organization, writeDest)
 
 	return client, writeAPI, nil
 }
 
-func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics model.Teg) error {
+func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics model.Teg) error {
 
 	// Meters data
 	p := influx.NewPoint(
-		config.InfluxDB.MeasurementPrefix+"energy_meters",
+		conf.InfluxDB.MeasurementPrefix+"energy_meters",
 		map[string]string{
 			"gateway_id":        metrics.Status.GatewayId,
 			"firmware_version":  metrics.Status.FirmwareVersion,
@@ -127,7 +127,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 
 	// Overall powerwall info
 	p = influx.NewPoint(
-		config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+		conf.InfluxDB.MeasurementPrefix+"energy_powerwalls",
 		map[string]string{
 			"gateway_id":        metrics.Status.GatewayId,
 			"firmware_version":  metrics.Status.FirmwareVersion,
@@ -159,7 +159,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 
 	// Overall powerwall sync diagnostics
 	p = influx.NewPoint(
-		config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+		conf.InfluxDB.MeasurementPrefix+"energy_powerwalls",
 		map[string]string{
 			"diagnostic":        metrics.Powerwalls.Sync.CommissioningDiagnostic.Name,
 			"category":          metrics.Powerwalls.Sync.CommissioningDiagnostic.Category,
@@ -182,7 +182,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 	writeAPI.WritePoint(p)
 
 	p = influx.NewPoint(
-		config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+		conf.InfluxDB.MeasurementPrefix+"energy_powerwalls",
 		map[string]string{
 			"diagnostic":        metrics.Powerwalls.Sync.UpdateDiagnostic.Name,
 			"category":          metrics.Powerwalls.Sync.UpdateDiagnostic.Category,
@@ -207,7 +207,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 	// Powerwall diagnostic check results
 	for _, check := range metrics.Powerwalls.Sync.CommissioningDiagnostic.Checks {
 		p = influx.NewPoint(
-			config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+			conf.InfluxDB.MeasurementPrefix+"energy_powerwalls",
 			map[string]string{
 				"check_name":        check.Name,
 				"diagnostic":        metrics.Powerwalls.Sync.CommissioningDiagnostic.Name,
@@ -235,7 +235,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 
 	for _, check := range metrics.Powerwalls.Sync.UpdateDiagnostic.Checks {
 		p = influx.NewPoint(
-			config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+			conf.InfluxDB.MeasurementPrefix+"energy_powerwalls",
 			map[string]string{
 				"check_name":        check.Name,
 				"diagnostic":        metrics.Powerwalls.Sync.UpdateDiagnostic.Name,
@@ -263,7 +263,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 
 	// Overall powerwall usage information
 	p = influx.NewPoint(
-		config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+		conf.InfluxDB.MeasurementPrefix+"energy_powerwalls",
 		map[string]string{
 			"gateway_id":        metrics.Status.GatewayId,
 			"firmware_version":  metrics.Status.FirmwareVersion,
@@ -319,7 +319,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 			powerwallChargePercent = float64(block.NominalEnergyRemainingWattHours) / float64(block.NominalFullPackEnergy) * 100.0
 		}
 		p = influx.NewPoint(
-			config.InfluxDB.MeasurementPrefix+"energy_powerwalls",
+			conf.InfluxDB.MeasurementPrefix+"energy_powerwalls",
 			map[string]string{
 				"powerwall_part_number":   block.PackagePartNumber,
 				"powerwall_serial_number": block.PackageSerialNumber,
@@ -361,7 +361,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 
 	// Overall site information and configuration
 	p = influx.NewPoint(
-		config.InfluxDB.MeasurementPrefix+"energy_configuration",
+		conf.InfluxDB.MeasurementPrefix+"energy_configuration",
 		map[string]string{
 			"gateway_id":        metrics.Status.GatewayId,
 			"firmware_version":  metrics.Status.FirmwareVersion,
@@ -393,7 +393,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 
 	// Overall network diagnostics
 	p = influx.NewPoint(
-		config.InfluxDB.MeasurementPrefix+"energy_network",
+		conf.InfluxDB.MeasurementPrefix+"energy_network",
 		map[string]string{
 			"diagnostic":        metrics.NetworkConnectionTests.Name,
 			"category":          metrics.NetworkConnectionTests.Category,
@@ -418,7 +418,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 	// Network connectivity tests
 	for _, check := range metrics.NetworkConnectionTests.Checks {
 		p = influx.NewPoint(
-			config.InfluxDB.MeasurementPrefix+"energy_network",
+			conf.InfluxDB.MeasurementPrefix+"energy_network",
 			map[string]string{
 				"check_name":        check.Name,
 				"diagnostic":        metrics.NetworkConnectionTests.Name,
@@ -446,7 +446,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 	// Solar device information
 	for _, inverter := range metrics.DevicesVitals.DevicesVitals.Inverters {
 		p = influx.NewPoint(
-			config.InfluxDB.MeasurementPrefix+"energy_inverters",
+			conf.InfluxDB.MeasurementPrefix+"energy_inverters",
 			map[string]string{
 				"gateway_id":                metrics.Status.GatewayId,
 				"firmware_version":          metrics.Status.FirmwareVersion,
@@ -485,7 +485,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 		writeAPI.WritePoint(p)
 
 		p = influx.NewPoint(
-			config.InfluxDB.MeasurementPrefix+"energy_inverters",
+			conf.InfluxDB.MeasurementPrefix+"energy_inverters",
 			map[string]string{
 				"gateway_id":                metrics.Status.GatewayId,
 				"firmware_version":          metrics.Status.FirmwareVersion,
@@ -516,7 +516,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 		writeAPI.WritePoint(p)
 
 		p = influx.NewPoint(
-			config.InfluxDB.MeasurementPrefix+"energy_inverters",
+			conf.InfluxDB.MeasurementPrefix+"energy_inverters",
 			map[string]string{
 				"gateway_id":                metrics.Status.GatewayId,
 				"firmware_version":          metrics.Status.FirmwareVersion,
@@ -547,7 +547,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 		writeAPI.WritePoint(p)
 
 		p = influx.NewPoint(
-			config.InfluxDB.MeasurementPrefix+"energy_inverters",
+			conf.InfluxDB.MeasurementPrefix+"energy_inverters",
 			map[string]string{
 				"gateway_id":                metrics.Status.GatewayId,
 				"firmware_version":          metrics.Status.FirmwareVersion,
@@ -578,7 +578,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 		writeAPI.WritePoint(p)
 
 		p = influx.NewPoint(
-			config.InfluxDB.MeasurementPrefix+"energy_inverters",
+			conf.InfluxDB.MeasurementPrefix+"energy_inverters",
 			map[string]string{
 				"gateway_id":                metrics.Status.GatewayId,
 				"firmware_version":          metrics.Status.FirmwareVersion,
@@ -612,7 +612,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 	for _, temperature := range metrics.DevicesVitals.DevicesVitals.Temperatures {
 		// Device temperature information
 		p = influx.NewPoint(
-			config.InfluxDB.MeasurementPrefix+"energy_devices",
+			conf.InfluxDB.MeasurementPrefix+"energy_devices",
 			map[string]string{
 				"gateway_id":              metrics.Status.GatewayId,
 				"firmware_version":        metrics.Status.FirmwareVersion,
@@ -647,7 +647,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 			alerts["alert_"+alert] = true
 		}
 		p = influx.NewPoint(
-			config.InfluxDB.MeasurementPrefix+"energy_devices",
+			conf.InfluxDB.MeasurementPrefix+"energy_devices",
 			map[string]string{
 				"gateway_id":              metrics.Status.GatewayId,
 				"firmware_version":        metrics.Status.FirmwareVersion,
@@ -682,7 +682,7 @@ func WriteAll(config *config.Configuration, writeAPI influxAPI.WriteAPI, metrics
 				valueString = decodedAlert.Value.(string)
 			}
 			p = influx.NewPoint(
-				config.InfluxDB.MeasurementPrefix+"energy_faults",
+				conf.InfluxDB.MeasurementPrefix+"energy_faults",
 				map[string]string{
 					"fault_name":        fault.AlertName,
 					"fault_subname":     decodedAlert.Name,

@@ -37,7 +37,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	configuration, err := config.LoadConfiguration(cliInputs.Config)
+	conf, err := config.LoadConfiguration(cliInputs.Config)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"op":    "config.LoadConfiguration",
@@ -45,7 +45,7 @@ func main() {
 		}).Fatal("failed to parse configuration")
 	}
 
-	tesla, refreshTime, err := connect.Auth(configuration)
+	tesla, refreshTime, err := connect.Auth(conf)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"op":    "connect.Auth",
@@ -54,7 +54,7 @@ func main() {
 	}
 	defer tesla.CloseIdleConnections()
 
-	influxClient, writeAPI, err := influxdb.Connect(configuration)
+	influxClient, writeAPI, err := influxdb.Connect(conf)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"op":    "influxdb.Connect",
@@ -84,7 +84,7 @@ func main() {
 		for {
 
 			if time.Now().After(refreshTime) {
-				tesla, refreshTime, err = connect.Auth(configuration)
+				tesla, refreshTime, err = connect.Auth(conf)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"op":    "connect.Auth",
@@ -95,10 +95,10 @@ func main() {
 
 			pollStartTime := time.Now()
 
-			metrics, err := connect.GetAll(configuration, tesla)
+			metrics, err := connect.GetAll(conf, tesla)
 			if err != nil {
 				var msg string
-				if configuration.Polling.ExitOnFail {
+				if conf.Polling.ExitOnFail {
 					msg = "failed to query all metrics, exiting"
 				} else {
 					msg = "failed to query all metrics, waiting for next poll"
@@ -107,14 +107,14 @@ func main() {
 					"op":    "connect.GetAll",
 					"error": err,
 				}).Error(msg)
-				if configuration.Polling.ExitOnFail {
+				if conf.Polling.ExitOnFail {
 					os.Exit(1)
 				}
 			} else {
-				influxdb.WriteAll(configuration, writeAPI, metrics)
+				influxdb.WriteAll(conf, writeAPI, metrics)
 			}
 
-			timeRemaining := configuration.Polling.Interval*time.Second - time.Since(pollStartTime)
+			timeRemaining := conf.Polling.Interval*time.Second - time.Since(pollStartTime)
 			time.Sleep(time.Duration(timeRemaining))
 			continue
 

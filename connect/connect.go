@@ -20,15 +20,15 @@ import (
 
 const expectedHttpStatus = 200
 
-func Auth(config *config.Configuration) (*http.Client, time.Time, error) {
+func Auth(conf *config.Configuration) (*http.Client, time.Time, error) {
 
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: config.TeslaGateway.SkipVerifySsl}
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: conf.TeslaGateway.SkipVerifySsl}
 	client := &http.Client{}
 
 	data := &model.AuthPayload{
 		Username:     "customer",
-		Password:     config.TeslaGateway.Password,
-		Email:        config.TeslaGateway.Email,
+		Password:     conf.TeslaGateway.Password,
+		Email:        conf.TeslaGateway.Email,
 		Force_Sm_Off: false,
 	}
 	dataJson, err := json.Marshal(data)
@@ -36,7 +36,7 @@ func Auth(config *config.Configuration) (*http.Client, time.Time, error) {
 		return client, time.Now(), err
 	}
 
-	req, err := http.NewRequest("POST", config.TeslaGateway.Address+"/api/login/Basic", bytes.NewBuffer(dataJson))
+	req, err := http.NewRequest("POST", conf.TeslaGateway.Address+"/api/login/Basic", bytes.NewBuffer(dataJson))
 	if err != nil {
 		return client, time.Now(), err
 	}
@@ -87,15 +87,15 @@ func Auth(config *config.Configuration) (*http.Client, time.Time, error) {
 		Expires: bodyJson.LoginTime.Add(24 * time.Hour),
 	}
 	cookies = append(cookies, cookie)
-	u, _ := url.Parse(config.TeslaGateway.Address)
+	u, _ := url.Parse(conf.TeslaGateway.Address)
 	jar.SetCookies(u, cookies)
 	client.Jar = jar
 
 	return client, bodyJson.LoginTime.Add(23*time.Hour + 55*time.Minute), nil
 }
 
-func GetEndpoint(config *config.Configuration, client *http.Client, endpoint string, data interface{}) error {
-	req, err := http.NewRequest("GET", config.TeslaGateway.Address+endpoint, nil)
+func GetEndpoint(conf *config.Configuration, client *http.Client, endpoint string, data interface{}) error {
+	req, err := http.NewRequest("GET", conf.TeslaGateway.Address+endpoint, nil)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func GetEndpoint(config *config.Configuration, client *http.Client, endpoint str
 	return nil
 }
 
-func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error) {
+func GetAll(conf *config.Configuration, client *http.Client) (model.Teg, error) {
 
 	teg := model.Teg{}
 
@@ -142,7 +142,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/meters/aggregates"
-		err := GetEndpoint(config, client, endpoint, &teg.Meters)
+		err := GetEndpoint(conf, client, endpoint, &teg.Meters)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -159,7 +159,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/meters/status"
-		err := GetEndpoint(config, client, endpoint, &teg.MetersStatus)
+		err := GetEndpoint(conf, client, endpoint, &teg.MetersStatus)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -171,7 +171,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/operation"
-		err := GetEndpoint(config, client, endpoint, &teg.Operation)
+		err := GetEndpoint(conf, client, endpoint, &teg.Operation)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -183,7 +183,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/powerwalls"
-		err := GetEndpoint(config, client, endpoint, &teg.Powerwalls)
+		err := GetEndpoint(conf, client, endpoint, &teg.Powerwalls)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -200,7 +200,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/site_info"
-		err := GetEndpoint(config, client, endpoint, &teg.SiteInfo)
+		err := GetEndpoint(conf, client, endpoint, &teg.SiteInfo)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -212,7 +212,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/sitemaster"
-		err := GetEndpoint(config, client, endpoint, &teg.Sitemaster)
+		err := GetEndpoint(conf, client, endpoint, &teg.Sitemaster)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -224,7 +224,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/solars"
-		err := GetEndpoint(config, client, endpoint, &teg.Solars)
+		err := GetEndpoint(conf, client, endpoint, &teg.Solars)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -239,7 +239,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/system/networks/conn_tests"
-		err := GetEndpoint(config, client, endpoint, &teg.NetworkConnectionTests)
+		err := GetEndpoint(conf, client, endpoint, &teg.NetworkConnectionTests)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -256,7 +256,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/status"
-		err := GetEndpoint(config, client, endpoint, &teg.Status)
+		err := GetEndpoint(conf, client, endpoint, &teg.Status)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -273,7 +273,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/system/testing"
-		err := GetEndpoint(config, client, endpoint, &teg.SystemTesting)
+		err := GetEndpoint(conf, client, endpoint, &teg.SystemTesting)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -285,7 +285,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/system/update/status"
-		err := GetEndpoint(config, client, endpoint, &teg.UpdateStatus)
+		err := GetEndpoint(conf, client, endpoint, &teg.UpdateStatus)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -297,7 +297,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/system_status"
-		err := GetEndpoint(config, client, endpoint, &teg.SystemStatus)
+		err := GetEndpoint(conf, client, endpoint, &teg.SystemStatus)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -319,7 +319,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/system_status/grid_status"
-		err := GetEndpoint(config, client, endpoint, &teg.SystemGridStatus)
+		err := GetEndpoint(conf, client, endpoint, &teg.SystemGridStatus)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -331,7 +331,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/system_status/soe"
-		err := GetEndpoint(config, client, endpoint, &teg.SystemStateOfEnergy)
+		err := GetEndpoint(conf, client, endpoint, &teg.SystemStateOfEnergy)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
@@ -343,7 +343,7 @@ func GetAll(config *config.Configuration, client *http.Client) (model.Teg, error
 	go func(waitgroup *sync.WaitGroup) {
 		defer waitgroup.Done()
 		endpoint := "/api/devices/vitals"
-		err := GetEndpoint(config, client, endpoint, &teg.DevicesVitals.DevicesVitalsProto)
+		err := GetEndpoint(conf, client, endpoint, &teg.DevicesVitals.DevicesVitalsProto)
 		if err != nil {
 			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
 			return
