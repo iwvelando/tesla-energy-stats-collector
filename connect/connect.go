@@ -18,25 +18,26 @@ import (
 	"time"
 )
 
-const expectedHttpStatus = 200
+const expectedHTTPStatus = 200
 
+// Auth authenticates to the Tesla Energy Gateway and returns an HTTP client
 func Auth(conf *config.Configuration) (*http.Client, time.Time, error) {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: conf.TeslaGateway.SkipVerifySsl}
 	client := &http.Client{}
 
 	data := &model.AuthPayload{
-		Username:     "customer",
-		Password:     conf.TeslaGateway.Password,
-		Email:        conf.TeslaGateway.Email,
-		Force_Sm_Off: false,
+		Username:   "customer",
+		Password:   conf.TeslaGateway.Password,
+		Email:      conf.TeslaGateway.Email,
+		ForceSmOff: false,
 	}
-	dataJson, err := json.Marshal(data)
+	dataJSON, err := json.Marshal(data)
 	if err != nil {
 		return client, time.Now(), err
 	}
 
-	req, err := http.NewRequest("POST", conf.TeslaGateway.Address+"/api/login/Basic", bytes.NewBuffer(dataJson))
+	req, err := http.NewRequest("POST", conf.TeslaGateway.Address+"/api/login/Basic", bytes.NewBuffer(dataJSON))
 	if err != nil {
 		return client, time.Now(), err
 	}
@@ -48,23 +49,23 @@ func Auth(conf *config.Configuration) (*http.Client, time.Time, error) {
 	}
 	defer resp.Body.Close()
 
-	bodyJson := &model.AuthResponse{}
+	bodyJSON := &model.AuthResponse{}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return client, time.Now(), err
 	}
 
 	status := resp.StatusCode
-	if status != expectedHttpStatus {
-		err = fmt.Errorf("expected %d HTTP status code but got %d; raw body %s", expectedHttpStatus, resp.StatusCode, body)
+	if status != expectedHTTPStatus {
+		err = fmt.Errorf("expected %d HTTP status code but got %d; raw body %s", expectedHTTPStatus, resp.StatusCode, body)
 		return client, time.Now(), err
 	}
 
-	err = json.Unmarshal(body, bodyJson)
+	err = json.Unmarshal(body, bodyJSON)
 	if err != nil {
 		return client, time.Now(), err
 	}
-	err = bodyJson.ParseTime()
+	err = bodyJSON.ParseTime()
 	if err != nil {
 		return client, time.Now(), fmt.Errorf("error when parsing authentication time, %s", err)
 	}
@@ -73,10 +74,10 @@ func Auth(conf *config.Configuration) (*http.Client, time.Time, error) {
 	var cookies []*http.Cookie
 	cookie := &http.Cookie{
 		Name:    "AuthCookie",
-		Value:   bodyJson.Token,
+		Value:   bodyJSON.Token,
 		Path:    "/",
 		Domain:  "",
-		Expires: bodyJson.LoginTime.Add(24 * time.Hour),
+		Expires: bodyJSON.LoginTime.Add(24 * time.Hour),
 	}
 	cookies = append(cookies, cookie)
 	cookie = &http.Cookie{
@@ -84,16 +85,17 @@ func Auth(conf *config.Configuration) (*http.Client, time.Time, error) {
 		Value:   b64.StdEncoding.EncodeToString(body),
 		Path:    "/",
 		Domain:  "",
-		Expires: bodyJson.LoginTime.Add(24 * time.Hour),
+		Expires: bodyJSON.LoginTime.Add(24 * time.Hour),
 	}
 	cookies = append(cookies, cookie)
 	u, _ := url.Parse(conf.TeslaGateway.Address)
 	jar.SetCookies(u, cookies)
 	client.Jar = jar
 
-	return client, bodyJson.LoginTime.Add(23*time.Hour + 55*time.Minute), nil
+	return client, bodyJSON.LoginTime.Add(23*time.Hour + 55*time.Minute), nil
 }
 
+// GetEndpoint queries an individual endpoint and stores the results in the provided data structure
 func GetEndpoint(conf *config.Configuration, client *http.Client, endpoint string, data interface{}) error {
 	req, err := http.NewRequest("GET", conf.TeslaGateway.Address+endpoint, nil)
 	if err != nil {
@@ -113,8 +115,8 @@ func GetEndpoint(conf *config.Configuration, client *http.Client, endpoint strin
 	}
 
 	status := resp.StatusCode
-	if status != expectedHttpStatus {
-		err = fmt.Errorf("expected %d HTTP status code but got %d; raw body %s", expectedHttpStatus, resp.StatusCode, body)
+	if status != expectedHTTPStatus {
+		err = fmt.Errorf("expected %d HTTP status code but got %d; raw body %s", expectedHTTPStatus, resp.StatusCode, body)
 		return err
 	}
 
@@ -131,6 +133,7 @@ func GetEndpoint(conf *config.Configuration, client *http.Client, endpoint strin
 	return nil
 }
 
+// GetAll calls GetEndpoint for all specified endpoints
 func GetAll(conf *config.Configuration, client *http.Client) (model.Teg, error) {
 
 	teg := model.Teg{}

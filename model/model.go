@@ -6,19 +6,18 @@ import (
 	"time"
 )
 
-const DateTimeNano = "2006-01-02T15:04:05.999999999-07:00"
-const DateTimeMicro = "2006-01-02T15:04:05.999999-07:00"
-const DateTimeStatus = "2006-01-02 15:04:05 -0700"
+const dateTimeNano = "2006-01-02T15:04:05.999999999-07:00"
+const dateTimeStatus = "2006-01-02 15:04:05 -0700"
 
-// Payload for /api/login/Basic
+// AuthPayload defines the payload for /api/login/Basic
 type AuthPayload struct {
-	Username     string
-	Password     string
-	Email        string
-	Force_Sm_Off bool
+	Username   string
+	Password   string
+	Email      string
+	ForceSmOff bool
 }
 
-// Response for /api/login/Basic
+// AuthResponse defines the response for /api/login/Basic
 type AuthResponse struct {
 	Email        string   `json:"email"`
 	Firstname    string   `json:"firstname"`
@@ -26,13 +25,14 @@ type AuthResponse struct {
 	Roles        []string `json:"roles"`
 	Token        string   `json:"token"`
 	Provider     string   `json:"provider"`
-	LoginTimeRaw string   `json:"loginTime"` // DateTimeNano
+	LoginTimeRaw string   `json:"loginTime"` // dateTimeNano
 	LoginTime    time.Time
 }
 
+// ParseTime converts string times in AuthResponse to time.Time
 func (r *AuthResponse) ParseTime() error {
 	if r.LoginTimeRaw != "" {
-		t, err := time.Parse(DateTimeNano, r.LoginTimeRaw)
+		t, err := time.Parse(dateTimeNano, r.LoginTimeRaw)
 		if err != nil {
 			return err
 		}
@@ -42,7 +42,7 @@ func (r *AuthResponse) ParseTime() error {
 	return nil
 }
 
-// Aggregated metrics structure
+// Teg defines the aggregated metrics
 type Teg struct {
 	Meters                 TegMeters
 	MetersStatus           TegMetersStatus
@@ -61,7 +61,7 @@ type Teg struct {
 	DevicesVitals          TegDevicesVitals
 }
 
-// Response for /api/meters/aggregates
+// TegMeters defines the response for /api/meters/aggregates
 type TegMeters struct {
 	Timestamp time.Time
 	Site      TegMetersAggregate `json:"site"`
@@ -70,8 +70,9 @@ type TegMeters struct {
 	Solar     TegMetersAggregate `json:"solar"`
 }
 
+// TegMetersAggregate defines meters data underneath TegMeters
 type TegMetersAggregate struct {
-	LastCommunicationTimeRaw          string `json:"last_communication_time"` // DateTimeNano
+	LastCommunicationTimeRaw          string `json:"last_communication_time"` // dateTimeNano
 	LastCommunicationTime             time.Time
 	InstantPowerWatts                 float64 `json:"instant_power"`
 	InstantReactivePowerWatts         float64 `json:"instant_reactive_power"`
@@ -91,30 +92,31 @@ type TegMetersAggregate struct {
 	InstantTotalCurrent               float64 `json:"instant_total_current"`
 }
 
+// ParseTime converts string times in TegMeters to time.Time
 func (r *TegMeters) ParseTime() error {
 	if r.Site.LastCommunicationTimeRaw != "" {
-		t, err := time.Parse(DateTimeNano, r.Site.LastCommunicationTimeRaw)
+		t, err := time.Parse(dateTimeNano, r.Site.LastCommunicationTimeRaw)
 		if err == nil {
 			r.Site.LastCommunicationTime = t
 		}
 	}
 
 	if r.Battery.LastCommunicationTimeRaw != "" {
-		t, err := time.Parse(DateTimeNano, r.Battery.LastCommunicationTimeRaw)
+		t, err := time.Parse(dateTimeNano, r.Battery.LastCommunicationTimeRaw)
 		if err == nil {
 			r.Battery.LastCommunicationTime = t
 		}
 	}
 
 	if r.Load.LastCommunicationTimeRaw != "" {
-		t, err := time.Parse(DateTimeNano, r.Load.LastCommunicationTimeRaw)
+		t, err := time.Parse(dateTimeNano, r.Load.LastCommunicationTimeRaw)
 		if err == nil {
 			r.Load.LastCommunicationTime = t
 		}
 	}
 
 	if r.Solar.LastCommunicationTimeRaw != "" {
-		t, err := time.Parse(DateTimeNano, r.Solar.LastCommunicationTimeRaw)
+		t, err := time.Parse(dateTimeNano, r.Solar.LastCommunicationTimeRaw)
 		if err == nil {
 			r.Solar.LastCommunicationTime = t
 		}
@@ -123,7 +125,7 @@ func (r *TegMeters) ParseTime() error {
 	return nil
 }
 
-// Response for /api/meters/status
+// TegMetersStatus defines the response for /api/meters/status
 type TegMetersStatus struct {
 	Timestamp time.Time
 	Status    string      `json:"status"`
@@ -131,7 +133,7 @@ type TegMetersStatus struct {
 	Serial    string      `json:"serial"`
 }
 
-// Response for /api/operation
+// TegOperation defines the response for /api/operation
 type TegOperation struct {
 	Timestamp               time.Time
 	RealMode                string  `json:"real_mode"`
@@ -140,13 +142,13 @@ type TegOperation struct {
 	FreqShiftLoadShedDeltaF float64 `json:"freq_shift_load_shed_delta_f"`
 }
 
-// Response for /api/powerwalls
+// TegPowerwalls defines the response for /api/powerwalls
 type TegPowerwalls struct {
 	Sync                       TegPowerwallsSync `json:"sync"`
 	Timestamp                  time.Time
 	Powerwalls                 []TegPowerwall `json:"powerwalls"`
 	Msa                        interface{}    `json:"msa"`
-	GatewayId                  string         `json:"gateway_din"`
+	GatewayID                  string         `json:"gateway_din"`
 	PhaseDetectionLastError    string         `json:"phase_detection_last_error"`
 	OnGridCheckError           string         `json:"on_grid_check_error"`
 	States                     interface{}    `json:"states"`
@@ -160,6 +162,7 @@ type TegPowerwalls struct {
 	GridQualifying             bool           `json:"grid_qualifying"`
 }
 
+// TegPowerwall defines powerwall data underneath TegPowerwalls
 type TegPowerwall struct {
 	CommissioningDiagnostic     TegPowerwallDiagnostic `json:"commissioning_diagnostic"`
 	UpdateDiagnostic            TegPowerwallDiagnostic `json:"update_diagnostic"`
@@ -175,12 +178,14 @@ type TegPowerwall struct {
 	InConfig                    bool                   `json:"in_config"`
 }
 
+// TegPowerwallsSync defines high-level diagnostic data underneath TegPowerwalls
 type TegPowerwallsSync struct {
 	Updating                bool                   `json:"updating"`
 	CommissioningDiagnostic TegPowerwallDiagnostic `json:"commissioning_diagnostic"`
 	UpdateDiagnostic        TegPowerwallDiagnostic `json:"update_diagnostic"`
 }
 
+// TegPowerwallDiagnostic defines low-level diagnostic data underneath TegPowerwallsSync
 type TegPowerwallDiagnostic struct {
 	Checks     []TegPowerwallsCheck `json:"checks"`
 	Name       string               `json:"name"`
@@ -190,12 +195,13 @@ type TegPowerwallDiagnostic struct {
 	Alert      bool                 `json:"alert"`
 }
 
+// TegPowerwallsCheck defines checks data underneath TegPowerwallDiagnostic
 type TegPowerwallsCheck struct {
 	Name         string `json:"name"`
 	Status       string `json:"status"`
-	StartTimeRaw string `json:"start_time"` // DateTimeNano
+	StartTimeRaw string `json:"start_time"` // dateTimeNano
 	StartTime    time.Time
-	EndTimeRaw   string `json:"end_time"` // DateTimeNano
+	EndTimeRaw   string `json:"end_time"` // dateTimeNano
 	EndTime      time.Time
 	Message      string      `json:"message"`
 	Progress     int         `json:"progress"`
@@ -204,11 +210,12 @@ type TegPowerwallsCheck struct {
 	Checks       interface{} `json:"checks"`
 }
 
+// ParseTime converts string times in TegPowerwalls to time.Time
 func (r TegPowerwalls) ParseTime() error {
 	for i := range r.Powerwalls {
 		for j, check := range r.Powerwalls[i].CommissioningDiagnostic.Checks {
 			if check.StartTimeRaw != "" {
-				t, err := time.Parse(DateTimeNano, check.StartTimeRaw)
+				t, err := time.Parse(dateTimeNano, check.StartTimeRaw)
 				if err != nil {
 					return err
 				}
@@ -216,7 +223,7 @@ func (r TegPowerwalls) ParseTime() error {
 			}
 
 			if check.EndTimeRaw != "" {
-				t, err := time.Parse(DateTimeNano, check.EndTimeRaw)
+				t, err := time.Parse(dateTimeNano, check.EndTimeRaw)
 				if err != nil {
 					return err
 				}
@@ -226,7 +233,7 @@ func (r TegPowerwalls) ParseTime() error {
 
 		for j, check := range r.Powerwalls[i].UpdateDiagnostic.Checks {
 			if check.StartTimeRaw != "" {
-				t, err := time.Parse(DateTimeNano, check.StartTimeRaw)
+				t, err := time.Parse(dateTimeNano, check.StartTimeRaw)
 				if err != nil {
 					return err
 				}
@@ -234,7 +241,7 @@ func (r TegPowerwalls) ParseTime() error {
 			}
 
 			if check.EndTimeRaw != "" {
-				t, err := time.Parse(DateTimeNano, check.EndTimeRaw)
+				t, err := time.Parse(dateTimeNano, check.EndTimeRaw)
 				if err != nil {
 					return err
 				}
@@ -245,7 +252,7 @@ func (r TegPowerwalls) ParseTime() error {
 
 	for i, check := range r.Sync.CommissioningDiagnostic.Checks {
 		if check.StartTimeRaw != "" {
-			t, err := time.Parse(DateTimeNano, check.StartTimeRaw)
+			t, err := time.Parse(dateTimeNano, check.StartTimeRaw)
 			if err != nil {
 				return err
 			}
@@ -253,7 +260,7 @@ func (r TegPowerwalls) ParseTime() error {
 		}
 
 		if check.EndTimeRaw != "" {
-			t, err := time.Parse(DateTimeNano, check.EndTimeRaw)
+			t, err := time.Parse(dateTimeNano, check.EndTimeRaw)
 			if err != nil {
 				return err
 			}
@@ -263,7 +270,7 @@ func (r TegPowerwalls) ParseTime() error {
 
 	for i, check := range r.Sync.UpdateDiagnostic.Checks {
 		if check.StartTimeRaw != "" {
-			t, err := time.Parse(DateTimeNano, check.StartTimeRaw)
+			t, err := time.Parse(dateTimeNano, check.StartTimeRaw)
 			if err != nil {
 				return err
 			}
@@ -271,7 +278,7 @@ func (r TegPowerwalls) ParseTime() error {
 		}
 
 		if check.EndTimeRaw != "" {
-			t, err := time.Parse(DateTimeNano, check.EndTimeRaw)
+			t, err := time.Parse(dateTimeNano, check.EndTimeRaw)
 			if err != nil {
 				return err
 			}
@@ -282,7 +289,7 @@ func (r TegPowerwalls) ParseTime() error {
 	return nil
 }
 
-// Response for /api/site_info
+// TegSiteInfo defines the response for /api/site_info
 type TegSiteInfo struct {
 	Timestamp              time.Time
 	MeasuredFrequency      float64             `json:"measured_frequency"`
@@ -299,6 +306,7 @@ type TegSiteInfo struct {
 	GridCode               TegSiteInfoGridCode `json:"grid_code"`
 }
 
+// TegSiteInfoGridCode defines local grid metadata underneath TegSiteInfo
 type TegSiteInfoGridCode struct {
 	GridCode           string `json:"grid_code"`
 	GridVoltageSetting int    `json:"grid_voltage_setting"`
@@ -309,7 +317,7 @@ type TegSiteInfoGridCode struct {
 	Utility            string `json:"utility"`
 }
 
-// Response for /api/sitemaster
+// TegSitemaster defines the response for /api/sitemaster
 type TegSitemaster struct {
 	Timestamp        time.Time
 	Status           string `json:"status"`
@@ -319,7 +327,7 @@ type TegSitemaster struct {
 	CanReboot        string `json:"can_reboot"`
 }
 
-// Response for /api/solars
+// TegSolars defines the response for /api/solars
 type TegSolars struct {
 	Timestamp        time.Time
 	Brand            string `json:"brand"`
@@ -327,10 +335,10 @@ type TegSolars struct {
 	PowerRatingWatts int    `json:"power_rating_watts"`
 }
 
-// Response for /api/status
+// TegStatus defines the response for /api/status
 type TegStatus struct {
 	Timestamp       time.Time
-	GatewayId       string `json:"din"`
+	GatewayID       string `json:"din"`
 	StartTimeRaw    string `json:"start_time"` // 2021-10-26 16:01:02 +0800
 	StartTime       time.Time
 	UptimeRaw       string `json:"up_time_seconds"` // 89h51m33.77086138s
@@ -345,9 +353,10 @@ type TegStatus struct {
 	Followers       interface{} `json:"followers"`
 }
 
+// ParseTime converts string times in TegStatus to time.Time
 func (r *TegStatus) ParseTime() error {
 	if r.StartTimeRaw != "" {
-		t, err := time.Parse(DateTimeStatus, r.StartTimeRaw)
+		t, err := time.Parse(dateTimeStatus, r.StartTimeRaw)
 		if err != nil {
 			return err
 		}
@@ -365,7 +374,7 @@ func (r *TegStatus) ParseTime() error {
 	return nil
 }
 
-// Response for /api/system/networks/conn_tests
+// TegNetworkConnectionTests defines the response for /api/system/networks/conn_tests
 type TegNetworkConnectionTests struct {
 	Timestamp  time.Time
 	Name       string                      `json:"name"`
@@ -376,22 +385,24 @@ type TegNetworkConnectionTests struct {
 	Alert      bool                        `json:"alert"`
 }
 
+// TegNetworkConnectionCheck defines check data underneath TegNetworkConnectionTests
 type TegNetworkConnectionCheck struct {
 	Name         string `json:"name"`
 	Status       string `json:"status"`
-	StartTimeRaw string `json:"start_time"` // DateTimeNano
+	StartTimeRaw string `json:"start_time"` // dateTimeNano
 	StartTime    time.Time
-	EndTimeRaw   string `json:"end_time"` // DateTimeNano
+	EndTimeRaw   string `json:"end_time"` // dateTimeNano
 	EndTime      time.Time
 	Results      interface{} `json:"results"`
 	Debug        interface{} `json:"debug"`
 	Checks       interface{} `json:"checks"`
 }
 
+// ParseTime converts string times in TegNetworkConnectionTests to time.Time
 func (r *TegNetworkConnectionTests) ParseTime() error {
 	for i, check := range r.Checks {
 		if check.StartTimeRaw != "" {
-			t, err := time.Parse(DateTimeNano, check.StartTimeRaw)
+			t, err := time.Parse(dateTimeNano, check.StartTimeRaw)
 			if err != nil {
 				return err
 			}
@@ -399,7 +410,7 @@ func (r *TegNetworkConnectionTests) ParseTime() error {
 		}
 
 		if check.EndTimeRaw != "" {
-			t, err := time.Parse(DateTimeNano, check.EndTimeRaw)
+			t, err := time.Parse(dateTimeNano, check.EndTimeRaw)
 			if err != nil {
 				return err
 			}
@@ -410,7 +421,7 @@ func (r *TegNetworkConnectionTests) ParseTime() error {
 	return nil
 }
 
-// Response for /api/system/testing
+// TegSystemTesting defines the response for /api/system/testing
 type TegSystemTesting struct {
 	Timestamp       time.Time
 	Running         bool        `json:"running"`
@@ -424,7 +435,7 @@ type TegSystemTesting struct {
 	Tests           interface{} `json:"tests"`
 }
 
-// Response for /api/system/update/status
+// TegUpdateStatus defines the response for /api/system/update/status
 type TegUpdateStatus struct {
 	Timestamp               time.Time
 	State                   string        `json:"state"`
@@ -437,11 +448,12 @@ type TegUpdateStatus struct {
 	EstimatedBytesPerSecond interface{}   `json:"estimated_bytes_per_second"`
 }
 
+// TegUpdateInfo defines update metadata underneath TegUpdateStatus
 type TegUpdateInfo struct {
 	Status []string `json:"status"`
 }
 
-// Response for /api/system_status
+// TegSystemStatus defines the response for /api/system_status
 type TegSystemStatus struct {
 	Timestamp                       time.Time
 	CommandSource                   string            `json:"command_source"`
@@ -469,7 +481,7 @@ type TegSystemStatus struct {
 	SmartInvDeltaP                  int               `json:"smart_inv_delta_p"`
 	SmartInvDeltaQ                  int               `json:"smart_inv_delta_q"`
 	Updating                        bool              `json:"updating"`
-	LastToggleTimestampRaw          string            `json:"last_toggle_timestamp"` // DateTimeNano
+	LastToggleTimestampRaw          string            `json:"last_toggle_timestamp"` // dateTimeNano
 	LastToggleTimestamp             time.Time
 	SolarRealPowerLimit             float64 `json:"solar_real_power_limit"`
 	Score                           int     `json:"score"`
@@ -481,6 +493,7 @@ type TegSystemStatus struct {
 	ExpectedEnergyRemaining         int     `json:"expected_energy_remaining"`
 }
 
+// TegBatteryBlock defines individual powerwall metadata underneath TegSystemStatus
 type TegBatteryBlock struct {
 	Type                            string   `json:"Type"`
 	PackagePartNumber               string   `json:"PackagePartNumber"`
@@ -506,6 +519,7 @@ type TegBatteryBlock struct {
 	Version                         string   `json:"version"`
 }
 
+// TegGridFault defines grid fault data underneath TegSystemStatus
 type TegGridFault struct {
 	Timestamp              int    `json:"timestamp"`
 	AlertName              string `json:"alert_name"`
@@ -514,21 +528,23 @@ type TegGridFault struct {
 	DecodedAlert           []TegGridAlert
 	AlertRaw               int    `json:"alert_raw"`
 	FirmwareGitHash        string `json:"git_hash"`
-	SiteUid                string `json:"site_uid"`
+	SiteUID                string `json:"site_uid"`
 	EcuType                string `json:"eco_type"`
 	EcuPackagePartNumber   string `json:"ecu_package_part_number"`
 	EcuPackageSerialNumber string `json:"ecu_package_serial_number"`
 }
 
+// TegGridAlert defines grid alert data underneath TegGridFault
 type TegGridAlert struct {
 	Name  string      `json:"name"`
 	Value interface{} `json:"value"` // Observed as string or float64
 	Units string      `json:"units"`
 }
 
+// ParseTime converts string times in TegSystemStatus to time.Time
 func (r *TegSystemStatus) ParseTime() error {
 	if r.LastToggleTimestampRaw != "" {
-		t, err := time.Parse(DateTimeNano, r.LastToggleTimestampRaw)
+		t, err := time.Parse(dateTimeNano, r.LastToggleTimestampRaw)
 		if err != nil {
 			return err
 		}
@@ -538,6 +554,7 @@ func (r *TegSystemStatus) ParseTime() error {
 	return nil
 }
 
+// ParseFaults unwraps JSON fault data
 func (r *TegSystemStatus) ParseFaults() error {
 	alert := &[]TegGridAlert{}
 	for i, fault := range r.GridFaults {
@@ -552,33 +569,34 @@ func (r *TegSystemStatus) ParseFaults() error {
 	return nil
 }
 
-// Response for /api/system_status/grid_status
+// TegSystemGridStatus defines the response for /api/system_status/grid_status
 type TegSystemGridStatus struct {
 	Timestamp          time.Time
 	GridStatus         string `json:"grid_status"`
 	GridServicesActive bool   `json:"grid_services_active"`
 }
 
-// Response for /api/system_status/soe
+// TegSystemStateOfEnergy defines the response for /api/system_status/soe
 type TegSystemStateOfEnergy struct {
 	Timestamp  time.Time
 	Percentage float64 `json:"percentage"`
 }
 
-// Response for /api/devices/vitals
+// TegDevicesVitals defines the response for /api/devices/vitals
 type TegDevicesVitals struct {
 	Timestamp          time.Time
 	DevicesVitalsProto DevicesWithVitals
 	DevicesVitals      TegDevices
 }
 
-// Transformed device vitals meant for database ingest
+// TegDevices defines the transformed device vitals meant for database ingest
 type TegDevices struct {
 	Inverters    []TegDeviceInverters
 	Temperatures []TegDeviceTemperatures
 	Alerts       []TegDeviceAlerts
 }
 
+// TegDeviceInverters defines inverter data underneath TegDevices
 type TegDeviceInverters struct {
 	Din                       string
 	PartNumber                string
@@ -619,6 +637,7 @@ type TegDeviceInverters struct {
 	PvacPvMeasuredPowerD      float64
 }
 
+// TegDeviceTemperatures defines thermal data underneath TegDevices
 type TegDeviceTemperatures struct {
 	Din                   string
 	PartNumber            string
@@ -632,6 +651,7 @@ type TegDeviceTemperatures struct {
 	ThcAmbientTemp        float64
 }
 
+// TegDeviceAlerts defines alert data underneath TegDevices
 type TegDeviceAlerts struct {
 	Din                   string
 	PartNumber            string
@@ -643,6 +663,7 @@ type TegDeviceAlerts struct {
 	Alerts                []string
 }
 
+// Transform parses data responses from TegDevicesVitals to prepare it for TegDevices
 func (r *TegDevicesVitals) Transform() {
 
 	// Transform pv string data

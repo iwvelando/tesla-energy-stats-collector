@@ -13,29 +13,17 @@ import (
 	"time"
 )
 
-var BuildVersion = "UNKNOWN"
-
 // CliInputs holds the data passed in via CLI parameters
 type CliInputs struct {
-	BuildVersion string
-	Config       string
-	ShowVersion  bool
+	Config string
 }
 
 func main() {
 
-	cliInputs := CliInputs{
-		BuildVersion: BuildVersion,
-	}
+	cliInputs := CliInputs{}
 	flags := flag.NewFlagSet("tesla-energy-stats-collector", 0)
 	flags.StringVar(&cliInputs.Config, "config", "config.yaml", "Set the location for the YAML config file")
-	flags.BoolVar(&cliInputs.ShowVersion, "version", false, "Print the version of tesla-energy-stats-collector")
 	flags.Parse(os.Args[1:])
-
-	if cliInputs.ShowVersion {
-		fmt.Println(cliInputs.BuildVersion)
-		os.Exit(0)
-	}
 
 	conf, err := config.LoadConfiguration(cliInputs.Config)
 	if err != nil {

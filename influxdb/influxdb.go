@@ -10,12 +10,7 @@ import (
 	"strings"
 )
 
-type InfluxWriteConfigError struct{}
-
-func (r *InfluxWriteConfigError) Error() string {
-	return "must configure at least one of bucket or database/retention policy"
-}
-
+// Connect authenticates to InfluxDB and returns a client
 func Connect(conf *config.Configuration) (influx.Client, influxAPI.WriteAPI, error) {
 	var auth string
 	if conf.InfluxDB.Token != "" {
@@ -32,7 +27,7 @@ func Connect(conf *config.Configuration) (influx.Client, influxAPI.WriteAPI, err
 	} else if conf.InfluxDB.Database != "" && conf.InfluxDB.RetentionPolicy != "" {
 		writeDest = fmt.Sprintf("%s/%s", conf.InfluxDB.Database, conf.InfluxDB.RetentionPolicy)
 	} else {
-		return nil, nil, &InfluxWriteConfigError{}
+		return nil, nil, fmt.Errorf("must configure at least one of bucket or database/retention policy")
 	}
 
 	if conf.InfluxDB.FlushInterval == 0 {
@@ -51,13 +46,14 @@ func Connect(conf *config.Configuration) (influx.Client, influxAPI.WriteAPI, err
 	return client, writeAPI, nil
 }
 
+// WriteAll writes the Teg data structure into InfluxDB
 func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics model.Teg) error {
 
 	// Meters data
 	p := influx.NewPoint(
 		conf.InfluxDB.MeasurementPrefix+"energy_meters",
 		map[string]string{
-			"gateway_id":        metrics.Status.GatewayId,
+			"gateway_id":        metrics.Status.GatewayID,
 			"firmware_version":  metrics.Status.FirmwareVersion,
 			"firmware_git_hash": metrics.Status.FirmwareGitHash,
 			"sync_type":         metrics.Status.SyncType,
@@ -129,7 +125,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 	p = influx.NewPoint(
 		conf.InfluxDB.MeasurementPrefix+"energy_powerwalls",
 		map[string]string{
-			"gateway_id":        metrics.Status.GatewayId,
+			"gateway_id":        metrics.Status.GatewayID,
 			"firmware_version":  metrics.Status.FirmwareVersion,
 			"firmware_git_hash": metrics.Status.FirmwareGitHash,
 			"sync_type":         metrics.Status.SyncType,
@@ -163,7 +159,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 		map[string]string{
 			"diagnostic":        metrics.Powerwalls.Sync.CommissioningDiagnostic.Name,
 			"category":          metrics.Powerwalls.Sync.CommissioningDiagnostic.Category,
-			"gateway_id":        metrics.Status.GatewayId,
+			"gateway_id":        metrics.Status.GatewayID,
 			"firmware_version":  metrics.Status.FirmwareVersion,
 			"firmware_git_hash": metrics.Status.FirmwareGitHash,
 			"sync_type":         metrics.Status.SyncType,
@@ -186,7 +182,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 		map[string]string{
 			"diagnostic":        metrics.Powerwalls.Sync.UpdateDiagnostic.Name,
 			"category":          metrics.Powerwalls.Sync.UpdateDiagnostic.Category,
-			"gateway_id":        metrics.Status.GatewayId,
+			"gateway_id":        metrics.Status.GatewayID,
 			"firmware_version":  metrics.Status.FirmwareVersion,
 			"firmware_git_hash": metrics.Status.FirmwareGitHash,
 			"sync_type":         metrics.Status.SyncType,
@@ -212,7 +208,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 				"check_name":        check.Name,
 				"diagnostic":        metrics.Powerwalls.Sync.CommissioningDiagnostic.Name,
 				"category":          metrics.Powerwalls.Sync.CommissioningDiagnostic.Category,
-				"gateway_id":        metrics.Status.GatewayId,
+				"gateway_id":        metrics.Status.GatewayID,
 				"firmware_version":  metrics.Status.FirmwareVersion,
 				"firmware_git_hash": metrics.Status.FirmwareGitHash,
 				"sync_type":         metrics.Status.SyncType,
@@ -240,7 +236,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 				"check_name":        check.Name,
 				"diagnostic":        metrics.Powerwalls.Sync.UpdateDiagnostic.Name,
 				"category":          metrics.Powerwalls.Sync.UpdateDiagnostic.Category,
-				"gateway_id":        metrics.Status.GatewayId,
+				"gateway_id":        metrics.Status.GatewayID,
 				"firmware_version":  metrics.Status.FirmwareVersion,
 				"firmware_git_hash": metrics.Status.FirmwareGitHash,
 				"sync_type":         metrics.Status.SyncType,
@@ -265,7 +261,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 	p = influx.NewPoint(
 		conf.InfluxDB.MeasurementPrefix+"energy_powerwalls",
 		map[string]string{
-			"gateway_id":        metrics.Status.GatewayId,
+			"gateway_id":        metrics.Status.GatewayID,
 			"firmware_version":  metrics.Status.FirmwareVersion,
 			"firmware_git_hash": metrics.Status.FirmwareGitHash,
 			"sync_type":         metrics.Status.SyncType,
@@ -323,7 +319,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 			map[string]string{
 				"powerwall_part_number":   block.PackagePartNumber,
 				"powerwall_serial_number": block.PackageSerialNumber,
-				"gateway_id":              metrics.Status.GatewayId,
+				"gateway_id":              metrics.Status.GatewayID,
 				"firmware_version":        metrics.Status.FirmwareVersion,
 				"firmware_git_hash":       metrics.Status.FirmwareGitHash,
 				"sync_type":               metrics.Status.SyncType,
@@ -363,7 +359,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 	p = influx.NewPoint(
 		conf.InfluxDB.MeasurementPrefix+"energy_configuration",
 		map[string]string{
-			"gateway_id":        metrics.Status.GatewayId,
+			"gateway_id":        metrics.Status.GatewayID,
 			"firmware_version":  metrics.Status.FirmwareVersion,
 			"firmware_git_hash": metrics.Status.FirmwareGitHash,
 			"sync_type":         metrics.Status.SyncType,
@@ -397,7 +393,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 		map[string]string{
 			"diagnostic":        metrics.NetworkConnectionTests.Name,
 			"category":          metrics.NetworkConnectionTests.Category,
-			"gateway_id":        metrics.Status.GatewayId,
+			"gateway_id":        metrics.Status.GatewayID,
 			"firmware_version":  metrics.Status.FirmwareVersion,
 			"firmware_git_hash": metrics.Status.FirmwareGitHash,
 			"sync_type":         metrics.Status.SyncType,
@@ -423,7 +419,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 				"check_name":        check.Name,
 				"diagnostic":        metrics.NetworkConnectionTests.Name,
 				"category":          metrics.NetworkConnectionTests.Category,
-				"gateway_id":        metrics.Status.GatewayId,
+				"gateway_id":        metrics.Status.GatewayID,
 				"firmware_version":  metrics.Status.FirmwareVersion,
 				"firmware_git_hash": metrics.Status.FirmwareGitHash,
 				"sync_type":         metrics.Status.SyncType,
@@ -448,7 +444,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 		p = influx.NewPoint(
 			conf.InfluxDB.MeasurementPrefix+"energy_inverters",
 			map[string]string{
-				"gateway_id":                metrics.Status.GatewayId,
+				"gateway_id":                metrics.Status.GatewayID,
 				"firmware_version":          metrics.Status.FirmwareVersion,
 				"firmware_git_hash":         metrics.Status.FirmwareGitHash,
 				"sync_type":                 metrics.Status.SyncType,
@@ -487,7 +483,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 		p = influx.NewPoint(
 			conf.InfluxDB.MeasurementPrefix+"energy_inverters",
 			map[string]string{
-				"gateway_id":                metrics.Status.GatewayId,
+				"gateway_id":                metrics.Status.GatewayID,
 				"firmware_version":          metrics.Status.FirmwareVersion,
 				"firmware_git_hash":         metrics.Status.FirmwareGitHash,
 				"sync_type":                 metrics.Status.SyncType,
@@ -518,7 +514,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 		p = influx.NewPoint(
 			conf.InfluxDB.MeasurementPrefix+"energy_inverters",
 			map[string]string{
-				"gateway_id":                metrics.Status.GatewayId,
+				"gateway_id":                metrics.Status.GatewayID,
 				"firmware_version":          metrics.Status.FirmwareVersion,
 				"firmware_git_hash":         metrics.Status.FirmwareGitHash,
 				"sync_type":                 metrics.Status.SyncType,
@@ -549,7 +545,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 		p = influx.NewPoint(
 			conf.InfluxDB.MeasurementPrefix+"energy_inverters",
 			map[string]string{
-				"gateway_id":                metrics.Status.GatewayId,
+				"gateway_id":                metrics.Status.GatewayID,
 				"firmware_version":          metrics.Status.FirmwareVersion,
 				"firmware_git_hash":         metrics.Status.FirmwareGitHash,
 				"sync_type":                 metrics.Status.SyncType,
@@ -580,7 +576,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 		p = influx.NewPoint(
 			conf.InfluxDB.MeasurementPrefix+"energy_inverters",
 			map[string]string{
-				"gateway_id":                metrics.Status.GatewayId,
+				"gateway_id":                metrics.Status.GatewayID,
 				"firmware_version":          metrics.Status.FirmwareVersion,
 				"firmware_git_hash":         metrics.Status.FirmwareGitHash,
 				"sync_type":                 metrics.Status.SyncType,
@@ -614,7 +610,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 		p = influx.NewPoint(
 			conf.InfluxDB.MeasurementPrefix+"energy_devices",
 			map[string]string{
-				"gateway_id":              metrics.Status.GatewayId,
+				"gateway_id":              metrics.Status.GatewayID,
 				"firmware_version":        metrics.Status.FirmwareVersion,
 				"firmware_git_hash":       metrics.Status.FirmwareGitHash,
 				"sync_type":               metrics.Status.SyncType,
@@ -649,7 +645,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 		p = influx.NewPoint(
 			conf.InfluxDB.MeasurementPrefix+"energy_devices",
 			map[string]string{
-				"gateway_id":              metrics.Status.GatewayId,
+				"gateway_id":              metrics.Status.GatewayID,
 				"firmware_version":        metrics.Status.FirmwareVersion,
 				"firmware_git_hash":       metrics.Status.FirmwareGitHash,
 				"sync_type":               metrics.Status.SyncType,
@@ -687,7 +683,7 @@ func WriteAll(conf *config.Configuration, writeAPI influxAPI.WriteAPI, metrics m
 					"fault_name":        fault.AlertName,
 					"fault_subname":     decodedAlert.Name,
 					"fault_units":       decodedAlert.Units,
-					"gateway_id":        metrics.Status.GatewayId,
+					"gateway_id":        metrics.Status.GatewayID,
 					"firmware_version":  metrics.Status.FirmwareVersion,
 					"firmware_git_hash": metrics.Status.FirmwareGitHash,
 					"sync_type":         metrics.Status.SyncType,
