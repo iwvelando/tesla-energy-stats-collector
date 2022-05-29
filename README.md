@@ -13,6 +13,9 @@ The Tesla gateway is polled at a frequency set by the configuration. The data is
 InfluxDB 1.x or 2.x asynchronously, and error handling behavior is defined by the configuration in
 which the operator may choose to let an external system such as systemd handle restart behavior.
 
+At this time this was written for my personal use, but I'm open to contributions or feedback if
+someone wants to expand the functionality in a backwards-compatible manner.
+
 ## References
 
 | Reference | Description |
