@@ -16,6 +16,20 @@ which the operator may choose to let an external system such as systemd handle r
 At this time this was written for my personal use, but I'm open to contributions or feedback if
 someone wants to expand the functionality in a backwards-compatible manner.
 
+## Schema
+
+In InfluxDB this code writes to the following measurements:
+
+* energy_configuration
+* energy_devices
+* energy_faults
+* energy_inverters
+* energy_meters
+* energy_network
+* energy_powerwalls
+
+These can all be prefixed based on the configuration.
+
 ## References
 
 | Reference | Description |
