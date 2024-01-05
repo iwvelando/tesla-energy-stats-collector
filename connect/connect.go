@@ -342,19 +342,6 @@ func GetAll(conf *config.Configuration, client *http.Client) (model.Teg, error) 
 		teg.SystemStateOfEnergy.Timestamp = time.Now()
 	}(&wg)
 
-	wg.Add(1)
-	go func(waitgroup *sync.WaitGroup) {
-		defer waitgroup.Done()
-		endpoint := "/api/devices/vitals"
-		err := GetEndpoint(conf, client, endpoint, &teg.DevicesVitals.DevicesVitalsProto)
-		if err != nil {
-			errChan <- fmt.Errorf("error when querying %s, %s", endpoint, err)
-			return
-		}
-		teg.DevicesVitals.Timestamp = time.Now()
-		teg.DevicesVitals.Transform()
-	}(&wg)
-
 	go func() {
 		wg.Wait()
 		close(errChan)
