@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.15.0
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
