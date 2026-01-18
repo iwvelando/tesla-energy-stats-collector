@@ -4,8 +4,9 @@ package config
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 // Configuration holds all configuration.
@@ -36,6 +37,7 @@ type InfluxDB struct {
 	Bucket            string
 	SkipVerifySsl     bool
 	FlushInterval     uint
+	HttpTimeout       uint
 }
 
 // Polling holds parameters related to how we poll the Tesla Gateway
