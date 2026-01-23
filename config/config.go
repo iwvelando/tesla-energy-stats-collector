@@ -44,6 +44,13 @@ type InfluxDB struct {
 type Polling struct {
 	Interval   time.Duration
 	ExitOnFail bool
+	Retry      Retry
+}
+
+// Retry holds parameters for retry logic on transient failures
+type Retry struct {
+	MaxAttempts  int
+	InitialDelay time.Duration
 }
 
 // LoadConfiguration takes a file path as input and loads the YAML-formatted

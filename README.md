@@ -12,6 +12,8 @@ whose purpose is to perform all individual data gathering tasks.
 The Tesla gateway is polled at a frequency set by the configuration. The data is written into
 InfluxDB 1.x or 2.x asynchronously, and error handling behavior is defined by the configuration in
 which the operator may choose to let an external system such as systemd handle restart behavior.
+Transient errors (such as 504 gateway timeouts) are automatically retried with exponential backoff
+to avoid unnecessary service restarts.
 
 At this time this was written for my personal use, but I'm open to contributions or feedback if
 someone wants to expand the functionality in a backwards-compatible manner.

@@ -6,22 +6,94 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/iwvelando/tesla-energy-stats-collector/config"
-	"github.com/iwvelando/tesla-energy-stats-collector/model"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/iwvelando/tesla-energy-stats-collector/config"
+	"github.com/iwvelando/tesla-energy-stats-collector/model"
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const expectedHTTPStatus = 200
 
-// Auth authenticates to the Tesla Energy Gateway and returns an HTTP client
+// isTransientError checks if an error is transient (gateway timeout, service unavailable, etc.)
+func isTransientError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errorStr := err.Error()
+	// Check for gateway timeout (504), service unavailable (503), bad gateway (502)
+	return strings.Contains(errorStr, "504") || strings.Contains(errorStr, "503") || strings.Contains(errorStr, "502")
+}
+
+// authWithRetry wraps authentication with retry logic for transient errors
+func authWithRetry(conf *config.Configuration) (*http.Client, time.Time, error) {
+	maxAttempts := conf.Polling.Retry.MaxAttempts
+	if maxAttempts <= 0 {
+		maxAttempts = 5 // default
+	}
+	initialDelay := conf.Polling.Retry.InitialDelay
+	if initialDelay <= 0 {
+		initialDelay = 10 * time.Second // default
+	}
+
+	var lastErr error
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		client, refreshTime, err := auth(conf)
+		if err == nil {
+			if attempt > 1 {
+				log.WithFields(log.Fields{
+					"op":      "connect.Auth",
+					"attempt": attempt,
+				}).Info("successfully authenticated after retry")
+			}
+			return client, refreshTime, nil
+		}
+
+		lastErr = err
+
+		if !isTransientError(err) {
+			// Non-transient error, don't retry
+			return client, refreshTime, err
+		}
+
+		if attempt < maxAttempts {
+			// Calculate exponential backoff delay
+			delay := initialDelay * time.Duration(1<<uint(attempt-1))
+			log.WithFields(log.Fields{
+				"op":          "connect.Auth",
+				"attempt":     attempt,
+				"maxAttempts": maxAttempts,
+				"error":       err,
+				"retryIn":     delay,
+			}).Warn("transient error during authentication, retrying")
+			time.Sleep(delay)
+		} else {
+			log.WithFields(log.Fields{
+				"op":      "connect.Auth",
+				"attempt": attempt,
+				"error":   err,
+			}).Error("max retry attempts reached for authentication")
+		}
+	}
+
+	return nil, time.Now(), fmt.Errorf("failed after %d attempts: %w", maxAttempts, lastErr)
+}
+
+// Auth authenticates to the Tesla Energy Gateway and returns an HTTP client with retry logic
 func Auth(conf *config.Configuration) (*http.Client, time.Time, error) {
+	return authWithRetry(conf)
+}
+
+// auth performs a single authentication attempt to the Tesla Energy Gateway
+func auth(conf *config.Configuration) (*http.Client, time.Time, error) {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: conf.TeslaGateway.SkipVerifySsl}
 	client := &http.Client{}

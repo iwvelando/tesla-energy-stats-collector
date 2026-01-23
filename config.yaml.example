@@ -25,3 +25,6 @@ influxDB:
 polling:
   interval: 5  # time in seconds to wait in between Tesla Gateway polling attempts
   exitOnFail: false  # if set to true exit on a failed poll (helpful for allowing systemd to handle retry logic)
+  retry:
+    maxAttempts: 5  # maximum number of retry attempts for transient errors (504, 503, 502); defaults to 5
+    initialDelay: 10  # initial delay in seconds before first retry, uses exponential backoff; defaults to 10
