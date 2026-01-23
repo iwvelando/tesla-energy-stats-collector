@@ -21,7 +21,11 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-const expectedHTTPStatus = 200
+const (
+	expectedHTTPStatus       = 200
+	defaultMaxRetryAttempts  = 5
+	defaultInitialRetryDelay = 10 * time.Second
+)
 
 // isTransientError checks if an error is transient (gateway timeout, service unavailable, etc.)
 func isTransientError(err error) bool {
@@ -29,67 +33,85 @@ func isTransientError(err error) bool {
 		return false
 	}
 	errorStr := err.Error()
-	// Check for gateway timeout (504), service unavailable (503), bad gateway (502)
-	return strings.Contains(errorStr, "504") || strings.Contains(errorStr, "503") || strings.Contains(errorStr, "502")
+	// Check for gateway timeout (504), service unavailable (503), bad gateway (502), and EOF errors
+	return strings.Contains(errorStr, "504") ||
+		strings.Contains(errorStr, "503") ||
+		strings.Contains(errorStr, "502") ||
+		strings.Contains(errorStr, "EOF")
 }
 
-// authWithRetry wraps authentication with retry logic for transient errors
-func authWithRetry(conf *config.Configuration) (*http.Client, time.Time, error) {
+// getRetryConfig returns retry configuration with defaults applied
+func getRetryConfig(conf *config.Configuration) (int, time.Duration) {
 	maxAttempts := conf.Polling.Retry.MaxAttempts
 	if maxAttempts <= 0 {
-		maxAttempts = 5 // default
+		maxAttempts = defaultMaxRetryAttempts
 	}
 	initialDelay := conf.Polling.Retry.InitialDelay
 	if initialDelay <= 0 {
-		initialDelay = 10 * time.Second // default
+		initialDelay = defaultInitialRetryDelay
 	}
+	return maxAttempts, initialDelay
+}
+
+// retryWithBackoff executes a function with exponential backoff retry logic for transient errors
+func retryWithBackoff(conf *config.Configuration, operation string, fn func() error) error {
+	maxAttempts, initialDelay := getRetryConfig(conf)
 
 	var lastErr error
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		client, refreshTime, err := auth(conf)
+		err := fn()
 		if err == nil {
 			if attempt > 1 {
 				log.WithFields(log.Fields{
-					"op":      "connect.Auth",
+					"op":      operation,
 					"attempt": attempt,
-				}).Info("successfully authenticated after retry")
+				}).Info("operation succeeded after retry")
 			}
-			return client, refreshTime, nil
+			return nil
 		}
 
 		lastErr = err
 
 		if !isTransientError(err) {
 			// Non-transient error, don't retry
-			return client, refreshTime, err
+			return err
 		}
 
 		if attempt < maxAttempts {
 			// Calculate exponential backoff delay
 			delay := initialDelay * time.Duration(1<<uint(attempt-1))
 			log.WithFields(log.Fields{
-				"op":          "connect.Auth",
+				"op":          operation,
 				"attempt":     attempt,
 				"maxAttempts": maxAttempts,
 				"error":       err,
 				"retryIn":     delay,
-			}).Warn("transient error during authentication, retrying")
+			}).Warn("transient error, retrying")
 			time.Sleep(delay)
 		} else {
 			log.WithFields(log.Fields{
-				"op":      "connect.Auth",
+				"op":      operation,
 				"attempt": attempt,
 				"error":   err,
-			}).Error("max retry attempts reached for authentication")
+			}).Error("max retry attempts reached")
 		}
 	}
 
-	return nil, time.Now(), fmt.Errorf("failed after %d attempts: %w", maxAttempts, lastErr)
+	return fmt.Errorf("failed after %d attempts: %w", maxAttempts, lastErr)
 }
 
 // Auth authenticates to the Tesla Energy Gateway and returns an HTTP client with retry logic
 func Auth(conf *config.Configuration) (*http.Client, time.Time, error) {
-	return authWithRetry(conf)
+	var client *http.Client
+	var refreshTime time.Time
+
+	err := retryWithBackoff(conf, "connect.Auth", func() error {
+		var authErr error
+		client, refreshTime, authErr = auth(conf)
+		return authErr
+	})
+
+	return client, refreshTime, err
 }
 
 // auth performs a single authentication attempt to the Tesla Energy Gateway
@@ -167,8 +189,15 @@ func auth(conf *config.Configuration) (*http.Client, time.Time, error) {
 	return client, bodyJSON.LoginTime.Add(23*time.Hour + 55*time.Minute), nil
 }
 
-// GetEndpoint queries an individual endpoint and stores the results in the provided data structure
+// GetEndpoint queries an individual endpoint and stores the results in the provided data structure with retry logic
 func GetEndpoint(conf *config.Configuration, client *http.Client, endpoint string, data interface{}) error {
+	return retryWithBackoff(conf, fmt.Sprintf("connect.GetEndpoint[%s]", endpoint), func() error {
+		return getEndpoint(conf, client, endpoint, data)
+	})
+}
+
+// getEndpoint performs a single endpoint query attempt
+func getEndpoint(conf *config.Configuration, client *http.Client, endpoint string, data interface{}) error {
 	req, err := http.NewRequest("GET", conf.TeslaGateway.Address+endpoint, nil)
 	if err != nil {
 		return err
